@@ -87,12 +87,29 @@ func CheckMigrate(db *gorm.DB, objects []interface{}) []string {
 	if len(sqs) >= 0 {
 		zaplog.LOG.Debug("missing", zap.Int("size", len(sqs)))
 		zaplog.SUG.Debugln("-")
-		for idx, sqLine := range sqs {
-			zaplog.SUG.Debug("missing:", fmt.Sprintf("(%d/%d)", idx, len(sqs)), "\n", eroticgo.PINK.Sprint(sqLine+";"))
+		for idx, sqx := range sqs {
+			zaplog.SUG.Debug(
+				"missing:",
+				fmt.Sprintf("(%d/%d)", idx, len(sqs)),
+				"\n",
+				eroticgo.PINK.Sprint("----------------"),
+				"\n\n",
+				eroticgo.PINK.Sprint(sqx+";"),
+				"\n\n",
+				eroticgo.PINK.Sprint("----------------"),
+			)
 		}
 		zaplog.SUG.Debugln("-")
 		zaplog.SUG.Debugln("-")
-		zaplog.SUG.Debug("missing:", "(n/n)", "\n", eroticgo.CYAN.Sprint(strings.Join(sqs, ";\n\n")+";"))
+		zaplog.SUG.Debug(
+			"scripts:",
+			"\n",
+			eroticgo.CYAN.Sprint("----------------"),
+			"\n\n",
+			eroticgo.CYAN.Sprint(strings.Join(sqs, ";\n\n")+";"),
+			"\n\n",
+			eroticgo.CYAN.Sprint("----------------"),
+		)
 		zaplog.SUG.Debugln("-")
 		zaplog.SUG.Debugln("-")
 		zaplog.SUG.Debugln("success")

@@ -1,4 +1,4 @@
-package cobramigration
+package newmigrate
 
 import (
 	"github.com/golang-migrate/migrate/v4"
@@ -26,9 +26,9 @@ type Param struct {
 // Note: The type param T is used to trigger side effects.
 //
 // Example:
-//   - migration, err := NewMigrate[sqlite3.Sqlite](param)
-//   - migration, err := NewMigrate[mysql.Mysql](param)
-//   - migration, err := NewMigrate[postgres.Postgres](param)
+//   - migration, err := NewMigrate[*sqlite3.Sqlite](param)
+//   - migration, err := NewMigrate[*mysql.Mysql](param)
+//   - migration, err := NewMigrate[*postgres.Postgres](param)
 func NewMigrate[T database.Driver](param *Param) (*migrate.Migrate, error) {
 	migration, err := migrate.New("file://"+param.ScriptsInRoot, param.ConnectSource)
 	if err != nil {

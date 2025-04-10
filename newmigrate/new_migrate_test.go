@@ -1,11 +1,11 @@
-package example1x
+package newmigrate_test
 
 import (
 	"fmt"
 	"strings"
 	"testing"
 
-	"github.com/go-xlan/go-migrate/cobramigration"
+	"github.com/go-xlan/go-migrate/newmigrate"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/stretchr/testify/require"
 	"github.com/yyle88/eroticgo"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestNewMigrate(t *testing.T) {
-	migrate := rese.P1(cobramigration.NewMigrate[*sqlite3.Sqlite](&cobramigration.Param{
+	migrate := rese.P1(newmigrate.NewMigrate[*sqlite3.Sqlite](&newmigrate.Param{
 		ScriptsInRoot: runpath.PARENT.Join("scripts"),
 		ConnectSource: "sqlite3://file::memory:?cache=private",
 	}))

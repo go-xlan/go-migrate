@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	must.Full(&file.File{})
+	must.Full(&file.File{}) // register file source(side effects)
 }
 
 type Param struct {

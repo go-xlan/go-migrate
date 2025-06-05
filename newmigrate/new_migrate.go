@@ -16,12 +16,12 @@ func init() {
 	must.Full(&file.File{}) // register file source(side effects)
 }
 
-type ScriptsAndSourceParam struct {
+type ScriptsAndDBSourceParam struct {
 	ScriptsInRoot string
 	ConnectSource string
 }
 
-// NewWithScriptsAndSource creates a new migration instance.
+// NewWithScriptsAndDBSource creates a new migration instance.
 // T must implement database.Driver interface, e.g.:
 //   - sqlite3.Sqlite from "github.com/golang-migrate/migrate/v4/database/sqlite3"
 //   - mysql.Mysql from "github.com/golang-migrate/migrate/v4/database/mysql"
@@ -30,10 +30,10 @@ type ScriptsAndSourceParam struct {
 // Note: The type param T is used to trigger side effects.
 //
 // Example:
-//   - migration, err := NewWithScriptsAndSource[*sqlite3.Sqlite](param)
-//   - migration, err := NewWithScriptsAndSource[*mysql.Mysql](param)
-//   - migration, err := NewWithScriptsAndSource[*postgres.Postgres](param)
-func NewWithScriptsAndSource[T database.Driver](param *ScriptsAndSourceParam) (*migrate.Migrate, error) {
+//   - migration, err := NewWithScriptsAndDBSource[*sqlite3.Sqlite](param)
+//   - migration, err := NewWithScriptsAndDBSource[*mysql.Mysql](param)
+//   - migration, err := NewWithScriptsAndDBSource[*postgres.Postgres](param)
+func NewWithScriptsAndDBSource[T database.Driver](param *ScriptsAndDBSourceParam) (*migrate.Migrate, error) {
 	migration, err := migrate.New("file://"+param.ScriptsInRoot, param.ConnectSource)
 	if err != nil {
 		return nil, erero.Wro(err)
@@ -41,14 +41,32 @@ func NewWithScriptsAndSource[T database.Driver](param *ScriptsAndSourceParam) (*
 	return migration, nil
 }
 
-type EmbedAndDatabaseParam struct {
+type ScriptsAndDatabaseParam struct {
+	ScriptsInRoot    string
+	DatabaseName     string
+	DatabaseInstance database.Driver
+}
+
+func NewWithScriptsAndDatabase(param *ScriptsAndDatabaseParam) (*migrate.Migrate, error) {
+	migration, err := migrate.NewWithDatabaseInstance(
+		"file://"+param.ScriptsInRoot,
+		param.DatabaseName,
+		param.DatabaseInstance,
+	)
+	if err != nil {
+		return nil, erero.Wro(err)
+	}
+	return migration, nil
+}
+
+type EmbedFsAndDatabaseParam struct {
 	MigrationsFS     *embed.FS
 	EmbedDirName     string
 	DatabaseName     string
 	DatabaseInstance database.Driver
 }
 
-func NewWithEmbedAndDatabase(param *EmbedAndDatabaseParam) (*migrate.Migrate, error) {
+func NewWithEmbedFsAndDatabase(param *EmbedFsAndDatabaseParam) (*migrate.Migrate, error) {
 	migration, err := migrate.NewWithInstance(
 		"iofs", // 固定的 iofs 类型
 		rese.V1(iofs.New(param.MigrationsFS, param.EmbedDirName)), // 初始化 iofs 驱动

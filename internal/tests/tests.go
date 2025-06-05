@@ -23,9 +23,22 @@ func (l *LoggerDebug) Verbose() bool {
 	return true // 启用详细日志
 }
 
-func CaseShowVersionNum(t *testing.T, migration *migrate.Migrate, db *gorm.DB) {
+func CaseShowVersionNumAndTables(t *testing.T, migration *migrate.Migrate, db *gorm.DB) {
 	zapLog := zaplog.ZAPS.Skip(1)
 
+	version := caseShowVersionNum(t, migration, zapLog.SkipZap(1))
+
+	caseShowTableCount(t, db, zapLog.SkipZap(1, zap.Uint("version", version)))
+	t.Log("---")
+}
+
+func CaseShowVersionNum(t *testing.T, migration *migrate.Migrate) {
+	zapLog := zaplog.ZAPS.Skip(1)
+	caseShowVersionNum(t, migration, zapLog.SkipZap(1))
+	t.Log("---")
+}
+
+func caseShowVersionNum(t *testing.T, migration *migrate.Migrate, zapLog *zaplog.Zap) uint {
 	t.Log("---")
 	version, dirtyState, err := migration.Version()
 	if err != nil {
@@ -35,9 +48,7 @@ func CaseShowVersionNum(t *testing.T, migration *migrate.Migrate, db *gorm.DB) {
 	}
 	require.False(t, dirtyState)
 	zapLog.SUG.Debugln("version-num:", version)
-
-	caseShowTableCount(t, db, zapLog.SkipZap(1, zap.Uint("version", version)))
-	t.Log("---")
+	return version
 }
 
 func CaseShowTableCount(t *testing.T, db *gorm.DB) {

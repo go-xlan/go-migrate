@@ -6,14 +6,14 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.18.2
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
-	github.com/yyle88/done v1.0.25
-	github.com/yyle88/erero v1.0.20
-	github.com/yyle88/eroticgo v0.0.3
-	github.com/yyle88/must v0.0.23
+	github.com/yyle88/done v1.0.26
+	github.com/yyle88/erero v1.0.21
+	github.com/yyle88/eroticgo v0.0.4
+	github.com/yyle88/must v0.0.24
 	github.com/yyle88/neatjson v0.0.12
 	github.com/yyle88/rese v0.0.10
 	github.com/yyle88/runpath v1.0.23
-	github.com/yyle88/zaplog v0.0.22
+	github.com/yyle88/zaplog v0.0.23
 	go.uber.org/zap v1.27.0
 	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.26.1
@@ -32,7 +32,7 @@ require (
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/yyle88/mutexmap v1.0.13 // indirect
 	github.com/yyle88/sure v0.0.38 // indirect
-	github.com/yyle88/syntaxgo v0.0.50 // indirect
+	github.com/yyle88/syntaxgo v0.0.52 // indirect
 	github.com/yyle88/tern v0.0.8 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

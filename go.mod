@@ -4,6 +4,7 @@ go 1.22.8
 
 require (
 	github.com/golang-migrate/migrate/v4 v4.18.2
+	github.com/google/uuid v1.6.0
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/yyle88/done v1.0.26
@@ -13,7 +14,7 @@ require (
 	github.com/yyle88/neatjson v0.0.12
 	github.com/yyle88/rese v0.0.10
 	github.com/yyle88/runpath v1.0.23
-	github.com/yyle88/zaplog v0.0.23
+	github.com/yyle88/zaplog v0.0.24
 	go.uber.org/zap v1.27.0
 	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.26.1

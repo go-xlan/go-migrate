@@ -43,8 +43,7 @@ func (c *CustomLogger) Trace(_ context.Context, begin time.Time, fc func() (stri
 	c.SQLs = append(c.SQLs, sqx)
 }
 
-// CheckMigrate 这个函数用来对比DB和模型，检查DB里缺少什么没有执行的语句
-func CheckMigrate(db *gorm.DB, objects []interface{}) []string {
+func GetMigrateOps(db *gorm.DB, objects []interface{}) MigrationOps {
 	// 创建自定义 Logger
 	customLogger := &CustomLogger{
 		SQLs: make([]string, 0),
@@ -60,31 +59,21 @@ func CheckMigrate(db *gorm.DB, objects []interface{}) []string {
 	// 获取生成的 SQL
 	zaplog.SUG.Debugln("execute:", eroticgo.BLUE.Sprint(neatjsons.S(customLogger.SQLs)))
 
-	sqs := make([]string, 0, len(customLogger.SQLs))
-
-	substrings := []string{
-		"CREATE TABLE",
-		"ALTER TABLE",
-		"ADD COLUMN",
-		"ADD INDEX",
-		"CREATE INDEX",
-		"CREATE UNIQUE INDEX",
-	}
-	for _, sqx := range customLogger.SQLs {
+	results := make([]*MigrationOp, 0, len(customLogger.SQLs))
+	for _, forwardSQL := range customLogger.SQLs {
 		// 判断是否需要迁移
-		match := false
-		for _, sub := range substrings {
-			if strings.Contains(sqx, sub) {
-				match = true
-				break
-			}
-		}
-
-		if match {
-			sqs = append(sqs, sqx)
+		if migrationOp, match := NewMigrationOp(forwardSQL); match {
+			results = append(results, must.Full(migrationOp))
 		}
 	}
-	zaplog.LOG.Debug("missing", zap.Int("size", len(sqs)))
+	return results
+}
+
+// CheckMigrate 这个函数用来对比DB和模型，检查DB里缺少什么没有执行的语句
+func CheckMigrate(db *gorm.DB, objects []interface{}) []string {
+	steps := GetMigrateOps(db, objects)
+	zaplog.LOG.Debug("missing", zap.Int("size", len(steps)))
+	sqs := steps.GetForwardSQLs()
 	if len(sqs) > 0 {
 		debugMigrationSqs(sqs)
 	}

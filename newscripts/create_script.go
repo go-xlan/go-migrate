@@ -1,0 +1,200 @@
+package newscripts
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/source"
+	"github.com/pkg/errors"
+	"github.com/yyle88/done"
+	"github.com/yyle88/erero"
+	"github.com/yyle88/must"
+	"github.com/yyle88/must/mustnum"
+	"github.com/yyle88/must/muststrings"
+	"github.com/yyle88/neatjson/neatjsons"
+	"github.com/yyle88/osexistpath/osmustexist"
+	"github.com/yyle88/rese"
+	"github.com/yyle88/rese/resb"
+	"github.com/yyle88/tern/zerotern"
+	"github.com/yyle88/zaplog"
+	"go.uber.org/zap"
+)
+
+type enumMigrateState string
+
+const (
+	noneMigrated enumMigrateState = "none-migrated"
+	onceMigrated enumMigrateState = "once-migrated"
+)
+
+func GetNextScriptName(migration *migrate.Migrate, options *Options) *NextScript {
+	var migrateState enumMigrateState
+	version, dirtyFlag, err := migration.Version()
+	if err != nil {
+		if errors.Is(err, migrate.ErrNilVersion) {
+			must.Zero(version)
+			migrateState = noneMigrated
+		} else {
+			panic(erero.Wro(err))
+		}
+	} else {
+		must.False(dirtyFlag)
+		migrateState = onceMigrated
+	}
+	must.Nice(migrateState)
+	mustnum.Gte(version, 0)
+
+	migrations := newMigrationsFromPath(options.ScriptsInRoot)
+
+	nextVersion, nextAction := obtainNextVersion(migrateState, version, migrations, options)
+	mustnum.Gt(nextVersion, version)
+	scriptName := obtainScriptName(nextVersion, nextAction, options, migrations)
+	checkScriptName(scriptName, version)
+
+	zaplog.SUG.Debugln("next-action:", nextAction)
+	zaplog.SUG.Debugln("script-name:", neatjsons.S(scriptName))
+
+	return &NextScript{
+		ScriptAction: nextAction,
+		Names:        scriptName,
+	}
+}
+
+func newMigrationsFromPath(scriptsInRoot string) *source.Migrations {
+	migrations := source.NewMigrations()
+	for _, e := range rese.V1(os.ReadDir(scriptsInRoot)) {
+		if e.IsDir() {
+			continue
+		}
+		migration := rese.P1(source.DefaultParse(e.Name()))
+		zaplog.SUG.Debugln("append migration to migrations:", "version:", migration.Version, "direction:", migration.Direction)
+		must.True(migrations.Append(migration))
+	}
+	return migrations
+}
+
+func mustWriteScript(nextAction ScriptAction, shortName string, scriptContent string, options *Options) {
+	var path = filepath.Join(options.ScriptsInRoot, shortName)
+	var perm os.FileMode
+	if nextAction == CreateScript {
+		must.False(osmustexist.IsFile(path))
+		perm = 0644
+	} else {
+		osmustexist.FILE(path)
+		stat := rese.V1(os.Stat(path))
+		perm = stat.Mode().Perm()
+	}
+	zaplog.SUG.Debugln("path:", path, "script-content:", scriptContent)
+	if options.DryRun {
+		zaplog.SUG.Debugln("dry-run mode", options.DryRun)
+		return
+	}
+	if options.SurveyWritten {
+		var written bool
+		prompt := &survey.Confirm{
+			Message: "write script to path?",
+			Default: true,
+		}
+		done.Done(survey.AskOne(prompt, &written))
+		if !written {
+			zaplog.SUG.Debugln("input_written", written)
+			return
+		}
+	}
+	must.Done(os.WriteFile(path, []byte(scriptContent), perm))
+	zaplog.SUG.Debugln("done")
+}
+
+func checkScriptName(scriptName *ScriptNames, previousVersion uint) {
+	zaplog.LOG.Debug("check", zap.String("forward_name", scriptName.ForwardName))
+	mig1 := rese.P1(source.DefaultParse(must.Nice(scriptName.ForwardName)))
+	mustnum.Gt(mig1.Version, previousVersion)
+
+	mig2 := rese.P1(source.DefaultParse(must.Nice(scriptName.ReverseName)))
+	mustnum.Gt(mig2.Version, previousVersion)
+
+	must.Same(mig1.Version, mig2.Version)
+}
+
+func obtainScriptName(nextVersion uint, nextAction ScriptAction, options *Options, migrations *source.Migrations) *ScriptNames {
+	var scriptName = &ScriptNames{}
+	switch nextAction {
+	case CreateScript:
+		if options.NewScriptPrefix == nil {
+			panic(erero.Errorf("CAN NOT GET new-script-name WHEN next-version=%v", nextVersion))
+		}
+
+		prefix := options.NewScriptPrefix(nextVersion)
+		muststrings.Contains(prefix, "_")
+		must.True(regexp.MustCompile(`^([0-9]+)_(.*)$`).MatchString(prefix))
+		muststrings.NotContains(prefix, ".")
+
+		// use first up-script suffix as suffix
+		suffix, ok := obtainFirstUpScriptNameSuffix(migrations)
+		if !ok {
+			suffix = zerotern.VV(options.DefaultSuffix, "sql")
+		}
+		muststrings.NotContains(suffix, ".")
+
+		scriptName.ForwardName = fmt.Sprintf("%s.%s.%s", prefix, source.Up, suffix)
+		must.True(source.DefaultRegex.MatchString(scriptName.ForwardName))
+
+		scriptName.ReverseName = fmt.Sprintf("%s.%s.%s", prefix, source.Down, suffix)
+		must.True(source.DefaultRegex.MatchString(scriptName.ReverseName))
+	case ModifyScript:
+		scriptName.ForwardName = resb.P1(migrations.Up(nextVersion)).Raw   // 123_name.up.ext
+		scriptName.ReverseName = resb.P1(migrations.Down(nextVersion)).Raw // 123_name.down.ext
+	default:
+		panic(erero.Errorf("IMPOSSIBLE case-value=%v", nextAction))
+	}
+	return scriptName
+}
+
+func obtainFirstUpScriptNameSuffix(migrations *source.Migrations) (string, bool) {
+	firstVersion, ok := migrations.First()
+	if ok {
+		migration, ok := migrations.Up(firstVersion)
+		if ok && migration != nil {
+			matches := source.DefaultRegex.FindStringSubmatch(migration.Raw)
+			if len(matches) == 5 {
+				return matches[4], true
+			}
+		}
+	}
+	return "", false
+}
+
+func obtainNextVersion(migrateState enumMigrateState, previousVersion uint, migrations *source.Migrations, options *Options) (uint, ScriptAction) {
+	var nextVersion uint
+	var ok bool
+	switch migrateState {
+	case noneMigrated:
+		must.Zero(previousVersion)
+		nextVersion, ok = migrations.First() //假如从没做过就取首个脚本为待修改的
+	case onceMigrated:
+		nextVersion, ok = migrations.Next(previousVersion) //否则就取下个版本的为待修改的
+	default:
+		panic(erero.Errorf("IMPOSSIBLE case-value=%v", migrateState))
+	}
+	if !ok {
+		must.Zero(nextVersion)
+		nextVersion = previousVersion + 1 //返回新版本号的参考值，当然后面也可以不使用这个参考值，而使用时间戳等版本号
+		return nextVersion, CreateScript  //假如取不到，就说明需要新建个脚本写内容
+	}
+	// if !options.ForceEdit {
+	mustNoNextNextVersion(migrations, nextVersion) //需要确认获得的这个版本号就是最高的，而不是中间的，你也只能修改最高的
+	// }
+	return nextVersion, ModifyScript
+}
+
+func mustNoNextNextVersion(migrations *source.Migrations, nextVersion uint) {
+	nextNextVersion, ok := migrations.Next(nextVersion)
+	if !ok {
+		return //这才是我们需要的，即没有下下个版本号的时候，就认为下个版本号就是最新的版本号
+	}
+	zaplog.LOG.Panic("script-is-not-lastest-version", zap.Uint("next_version", nextVersion), zap.Uint("next_next_version", nextNextVersion))
+}

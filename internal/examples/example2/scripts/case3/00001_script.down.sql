@@ -1,0 +1,3 @@
+SELECT 1 / 0; -- DROP INDEX; -- TODO
+
+SELECT 1 / 0; -- DROP TABLE; -- TODO

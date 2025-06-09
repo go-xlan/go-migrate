@@ -55,14 +55,14 @@ func newIncCMD(migration *migrate.Migrate) *cobra.Command {
 	}
 }
 
-func whistle(ein error) {
-	if ein != nil {
-		if errors.Is(ein, migrate.ErrNoChange) {
+func whistle(cause error) {
+	if cause != nil {
+		if errors.Is(cause, migrate.ErrNoChange) {
 			zaplog.SUG.Debugln(eroticgo.BLUE.Sprint("NO MIGRATION FILES TO RUN"))
-		} else if errors.Is(ein, os.ErrNotExist) {
+		} else if errors.Is(cause, os.ErrNotExist) {
 			zaplog.SUG.Debugln(eroticgo.BLUE.Sprint("MIGRATION FILES NOT FOUND"))
 		} else {
-			zaplog.SUG.Panicln(eroticgo.RED.Sprint("MIGRATION FAILED:"), ein)
+			zaplog.SUG.Panicln(eroticgo.RED.Sprint("MIGRATION FAILED:"), cause)
 		}
 		return
 	}

@@ -34,7 +34,11 @@ type ScriptsAndDBSourceParam struct {
 //   - migration, err := NewWithScriptsAndDBSource[*mysql.Mysql](param)
 //   - migration, err := NewWithScriptsAndDBSource[*postgres.Postgres](param)
 func NewWithScriptsAndDBSource[T database.Driver](param *ScriptsAndDBSourceParam) (*migrate.Migrate, error) {
-	migration, err := migrate.New("file://"+param.ScriptsInRoot, param.ConnectSource)
+	sourceURL := "file://" + param.ScriptsInRoot
+	migration, err := migrate.New(
+		sourceURL,
+		param.ConnectSource,
+	)
 	if err != nil {
 		return nil, erero.Wro(err)
 	}
@@ -48,8 +52,9 @@ type ScriptsAndDatabaseParam struct {
 }
 
 func NewWithScriptsAndDatabase(param *ScriptsAndDatabaseParam) (*migrate.Migrate, error) {
+	sourceURL := "file://" + param.ScriptsInRoot
 	migration, err := migrate.NewWithDatabaseInstance(
-		"file://"+param.ScriptsInRoot,
+		sourceURL,
 		param.DatabaseName,
 		param.DatabaseInstance,
 	)
@@ -67,8 +72,10 @@ type EmbedFsAndDatabaseParam struct {
 }
 
 func NewWithEmbedFsAndDatabase(param *EmbedFsAndDatabaseParam) (*migrate.Migrate, error) {
+	const sourceName = "iofs"
+	// cp from https://github.com/golang-migrate/migrate/blob/278833935c12dda022b1355f33a897d895501c45/source/iofs/example_test.go#L22
 	migration, err := migrate.NewWithInstance(
-		"iofs", // 固定的 iofs 类型
+		sourceName, // 固定的 iofs 类型
 		rese.V1(iofs.New(param.MigrationsFS, param.EmbedDirName)), // 初始化 iofs 驱动
 		param.DatabaseName,
 		param.DatabaseInstance,

@@ -1,0 +1,1 @@
+package newscripts_test

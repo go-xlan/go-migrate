@@ -6,23 +6,19 @@ type ScriptAction string
 
 const (
 	CreateScript ScriptAction = "create-script"
-	ModifyScript ScriptAction = "modify-script"
+	UpdateScript ScriptAction = "update-script"
 )
 
-type ScriptNames struct {
+type NextScript struct {
+	Action      ScriptAction
 	ForwardName string
 	ReverseName string
 }
 
-type NextScript struct {
-	ScriptAction ScriptAction
-	Names        *ScriptNames
-}
-
 func (next *NextScript) WriteScripts(migrationOps checkmigration.MigrationOps, options *Options) {
 	forwardScript := migrationOps.GetForwardScript()
-	mustWriteScript(next.ScriptAction, next.Names.ForwardName, forwardScript, options)
+	mustWriteScript(next.Action, next.ForwardName, forwardScript, options)
 
 	reverseScript, _ := migrationOps.GetReverseScript()
-	mustWriteScript(next.ScriptAction, next.Names.ReverseName, reverseScript, options)
+	mustWriteScript(next.Action, next.ReverseName, reverseScript, options)
 }

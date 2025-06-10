@@ -9,6 +9,10 @@ import (
 	"github.com/yyle88/tern/zerotern"
 )
 
+const (
+	sqlForceBreakStatement = "SELECT 1 / 0;" //当逻辑没有实现的时候，就返回个异常，提醒开发者修改代码
+)
+
 type MigrationKind struct {
 	ForwardSubstr string
 	ReverseSubstr string
@@ -48,7 +52,7 @@ func (op *MigrationOp) GetForwardSQL() string {
 }
 
 func (op *MigrationOp) GetReverseSQL() (string, bool) {
-	return "SELECT 1 / 0; -- " + op.Kind.ReverseSubstr, false //认为肯定有更好的工具来做这件事，这里暂时不要实现这个功能(别整太复杂反正早期也没人用的)
+	return sqlForceBreakStatement + " -- " + op.Kind.ReverseSubstr, false //认为肯定有更好的工具来做这件事，这里暂时不要实现这个功能(别整太复杂反正早期也没人用的)
 }
 
 type MigrationOps []*MigrationOp
@@ -95,7 +99,7 @@ func (ops MigrationOps) GetReverseScript() (string, bool) {
 		}
 		okk = false //只要有一个出错，就记录下来有错
 		reverseSQL = zerotern.VF(reverseSQL, func() string {
-			return "SELECT 1 / 0; -- " + op.Kind.ReverseSubstr
+			return sqlForceBreakStatement + " -- " + op.Kind.ReverseSubstr
 		})
 		forwardSQL := op.GetForwardSQL()
 		sqLine := fmt.Sprintf("-- reverse -- %s;\n%s; -- TODO", forwardSQL, reverseSQL)

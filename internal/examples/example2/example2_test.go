@@ -8,7 +8,6 @@ import (
 	"github.com/go-xlan/go-migrate/internal/tests"
 	"github.com/go-xlan/go-migrate/newmigrate"
 	"github.com/go-xlan/go-migrate/newscripts"
-	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -29,7 +28,14 @@ func TestGenerateNewScript(t *testing.T) {
 	}))
 	defer rese.F0(rese.P1(db.DB()).Close)
 
-	migration := newMigrateSqlite3(db, scriptsInRoot)
+	migration := rese.P1(newmigrate.NewWithScriptsAndDatabase(
+		&newmigrate.ScriptsAndDatabaseParam{
+			ScriptsInRoot:    scriptsInRoot,
+			DatabaseName:     "sqlite3",
+			DatabaseInstance: rese.V1(sqlite3.WithInstance(rese.P1(db.DB()), &sqlite3.Config{})),
+		},
+	))
+	migration.Log = &tests.LoggerDebug{}
 	defer func() {
 		err1, err2 := migration.Close()
 		must.Done(err1)
@@ -43,14 +49,20 @@ func TestGenerateNewScript(t *testing.T) {
 
 	nextScript := newscripts.GetNextScriptName(migration, options)
 	t.Log(neatjsons.S(nextScript))
-	require.Equal(t, newscripts.ModifyScript, nextScript.ScriptAction)
-	require.Equal(t, "00001_script.up.sql", nextScript.Names.ForwardName)
-	require.Equal(t, "00001_script.down.sql", nextScript.Names.ReverseName)
+	require.Equal(t, newscripts.UpdateScript, nextScript.Action)
+	require.Equal(t, "00001_script.up.sql", nextScript.ForwardName)
+	require.Equal(t, "00001_script.down.sql", nextScript.ReverseName)
 
 	migrateOps := checkmigration.GetMigrateOps(db, []any{
 		&UserV1{},
 	})
 	nextScript.WriteScripts(migrateOps, options)
+}
+
+func newDsn() string {
+	// 通常建议使用 shared (线程间共享/连接间共享)模式的，但使用 shared 模式时也通常建议设置唯一名称，就能控制共享的范围
+	dsn := fmt.Sprintf("file:db-%s?mode=memory&cache=shared", uuid.New().String())
+	return dsn
 }
 
 func TestGenerateNewScript_2(t *testing.T) {
@@ -61,7 +73,14 @@ func TestGenerateNewScript_2(t *testing.T) {
 	}))
 	defer rese.F0(rese.P1(db.DB()).Close)
 
-	migration := newMigrateSqlite3(db, scriptsInRoot)
+	migration := rese.P1(newmigrate.NewWithScriptsAndDatabase(
+		&newmigrate.ScriptsAndDatabaseParam{
+			ScriptsInRoot:    scriptsInRoot,
+			DatabaseName:     "sqlite3",
+			DatabaseInstance: rese.V1(sqlite3.WithInstance(rese.P1(db.DB()), &sqlite3.Config{})),
+		},
+	))
+	migration.Log = &tests.LoggerDebug{}
 	defer func() {
 		err1, err2 := migration.Close()
 		must.Done(err1)
@@ -73,9 +92,9 @@ func TestGenerateNewScript_2(t *testing.T) {
 		options := newscripts.NewOptions(scriptsInRoot)
 		options.DryRun = true
 		nextScript := newscripts.GetNextScriptName(migration, options)
-		require.Equal(t, newscripts.ModifyScript, nextScript.ScriptAction)
-		require.Equal(t, "00002_script.up.sql", nextScript.Names.ForwardName)
-		require.Equal(t, "00002_script.down.sql", nextScript.Names.ReverseName)
+		require.Equal(t, newscripts.UpdateScript, nextScript.Action)
+		require.Equal(t, "00002_script.up.sql", nextScript.ForwardName)
+		require.Equal(t, "00002_script.down.sql", nextScript.ReverseName)
 
 		migrateOps := checkmigration.GetMigrateOps(db, []any{
 			&UserV2{},
@@ -89,9 +108,9 @@ func TestGenerateNewScript_2(t *testing.T) {
 		options := newscripts.NewOptions(scriptsInRoot)
 		options.DryRun = true
 		nextScript := newscripts.GetNextScriptName(migration, options)
-		require.Equal(t, newscripts.CreateScript, nextScript.ScriptAction)
-		require.Equal(t, "00003_script.up.sql", nextScript.Names.ForwardName)
-		require.Equal(t, "00003_script.down.sql", nextScript.Names.ReverseName)
+		require.Equal(t, newscripts.CreateScript, nextScript.Action)
+		require.Equal(t, "00003_script.up.sql", nextScript.ForwardName)
+		require.Equal(t, "00003_script.down.sql", nextScript.ReverseName)
 
 		migrationOps := checkmigration.GetMigrateOps(db, []any{
 			&UserV2{},
@@ -108,7 +127,14 @@ func TestGenerateNewScript_3(t *testing.T) {
 	}))
 	defer rese.F0(rese.P1(db.DB()).Close)
 
-	migration := newMigrateSqlite3(db, scriptsInRoot)
+	migration := rese.P1(newmigrate.NewWithScriptsAndDatabase(
+		&newmigrate.ScriptsAndDatabaseParam{
+			ScriptsInRoot:    scriptsInRoot,
+			DatabaseName:     "sqlite3",
+			DatabaseInstance: rese.V1(sqlite3.WithInstance(rese.P1(db.DB()), &sqlite3.Config{})),
+		},
+	))
+	migration.Log = &tests.LoggerDebug{}
 	defer func() {
 		err1, err2 := migration.Close()
 		must.Done(err1)
@@ -118,31 +144,12 @@ func TestGenerateNewScript_3(t *testing.T) {
 
 	options := newscripts.NewOptions(scriptsInRoot)
 	nextScript := newscripts.GetNextScriptName(migration, options)
-	require.Equal(t, newscripts.ModifyScript, nextScript.ScriptAction)
-	require.Equal(t, "00002_script.up.sql", nextScript.Names.ForwardName)
-	require.Equal(t, "00002_script.down.sql", nextScript.Names.ReverseName)
+	require.Equal(t, newscripts.UpdateScript, nextScript.Action)
+	require.Equal(t, "00002_script.up.sql", nextScript.ForwardName)
+	require.Equal(t, "00002_script.down.sql", nextScript.ReverseName)
 
 	migrationOps := checkmigration.GetMigrateOps(db, []any{
 		&UserV2{},
 	})
 	nextScript.WriteScripts(migrationOps, options)
-}
-
-func newDsn() string {
-	// 通常建议使用 shared (线程间共享/连接间共享)模式的，但使用 shared 模式时也通常建议设置唯一名称，就能控制共享的范围
-	dsn := fmt.Sprintf("file:db-%s?mode=memory&cache=shared", uuid.New().String())
-	return dsn
-}
-
-func newMigrateSqlite3(db *gorm.DB, scriptsInRoot string) *migrate.Migrate {
-	databaseInstance := rese.V1(sqlite3.WithInstance(rese.P1(db.DB()), &sqlite3.Config{}))
-	migration := rese.P1(newmigrate.NewWithScriptsAndDatabase(
-		&newmigrate.ScriptsAndDatabaseParam{
-			ScriptsInRoot:    scriptsInRoot,
-			DatabaseName:     "sqlite3",
-			DatabaseInstance: databaseInstance,
-		},
-	))
-	migration.Log = &tests.LoggerDebug{}
-	return migration
 }

@@ -18,6 +18,6 @@ func NewOptions(scriptsInRoot string) *Options {
 		},
 		DryRun:        false,
 		SurveyWritten: false,
-		DefaultSuffix: "",
+		DefaultSuffix: "sql",
 	}
 }

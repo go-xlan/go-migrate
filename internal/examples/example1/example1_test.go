@@ -46,12 +46,11 @@ func TestNewWithScriptsAndDatabase(t *testing.T) {
 
 	t.Log("new-migrate")
 
-	databaseInstance := rese.V1(sqlite3.WithInstance(rese.P1(db.DB()), &sqlite3.Config{}))
 	migration := rese.P1(newmigrate.NewWithScriptsAndDatabase(
 		&newmigrate.ScriptsAndDatabaseParam{
 			ScriptsInRoot:    runpath.PARENT.Join("scripts"),
 			DatabaseName:     "sqlite3",
-			DatabaseInstance: databaseInstance,
+			DatabaseInstance: rese.V1(sqlite3.WithInstance(rese.P1(db.DB()), &sqlite3.Config{})),
 		},
 	))
 	migration.Log = &tests.LoggerDebug{}
@@ -105,13 +104,12 @@ func TestNewWithEmbedFsAndDatabase(t *testing.T) {
 	defer rese.F0(rese.P1(db.DB()).Close)
 
 	// 创建迁移实例
-	databaseInstance := rese.V1(sqlite3.WithInstance(rese.P1(db.DB()), &sqlite3.Config{}))
 	migration := rese.P1(newmigrate.NewWithEmbedFsAndDatabase(
 		&newmigrate.EmbedFsAndDatabaseParam{
 			MigrationsFS:     &migrationsFS,
 			EmbedDirName:     "scripts",
 			DatabaseName:     "sqlite3",
-			DatabaseInstance: databaseInstance,
+			DatabaseInstance: rese.V1(sqlite3.WithInstance(rese.P1(db.DB()), &sqlite3.Config{})),
 		},
 	))
 	migration.Log = &tests.LoggerDebug{}

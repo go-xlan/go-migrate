@@ -19,7 +19,6 @@ import (
 	"github.com/yyle88/osexistpath/osmustexist"
 	"github.com/yyle88/rese"
 	"github.com/yyle88/rese/resb"
-	"github.com/yyle88/tern/zerotern"
 	"github.com/yyle88/zaplog"
 	"go.uber.org/zap"
 )
@@ -52,15 +51,16 @@ func GetNextScriptName(migration *migrate.Migrate, options *Options) *NextScript
 
 	nextVersion, nextAction := obtainNextVersion(migrateState, version, migrations, options)
 	mustnum.Gt(nextVersion, version)
-	scriptName := obtainScriptName(nextVersion, nextAction, options, migrations)
-	checkScriptName(scriptName, version)
+	scriptNames := obtainScriptNames(nextVersion, nextAction, options, migrations)
+	checkScriptName(scriptNames, version)
 
 	zaplog.SUG.Debugln("next-action:", nextAction)
-	zaplog.SUG.Debugln("script-name:", neatjsons.S(scriptName))
+	zaplog.SUG.Debugln("script-name:", neatjsons.S(scriptNames))
 
 	return &NextScript{
-		ScriptAction: nextAction,
-		Names:        scriptName,
+		Action:      nextAction,
+		ForwardName: scriptNames.ForwardName,
+		ReverseName: scriptNames.ReverseName,
 	}
 }
 
@@ -109,7 +109,7 @@ func mustWriteScript(nextAction ScriptAction, shortName string, scriptContent st
 	zaplog.SUG.Debugln("done")
 }
 
-func checkScriptName(scriptName *ScriptNames, previousVersion uint) {
+func checkScriptName(scriptName *nextScriptName, previousVersion uint) {
 	zaplog.LOG.Debug("check", zap.String("forward_name", scriptName.ForwardName))
 	mig1 := rese.P1(source.DefaultParse(must.Nice(scriptName.ForwardName)))
 	mustnum.Gt(mig1.Version, previousVersion)
@@ -120,8 +120,13 @@ func checkScriptName(scriptName *ScriptNames, previousVersion uint) {
 	must.Same(mig1.Version, mig2.Version)
 }
 
-func obtainScriptName(nextVersion uint, nextAction ScriptAction, options *Options, migrations *source.Migrations) *ScriptNames {
-	var scriptName = &ScriptNames{}
+type nextScriptName struct {
+	ForwardName string
+	ReverseName string
+}
+
+func obtainScriptNames(nextVersion uint, nextAction ScriptAction, options *Options, migrations *source.Migrations) *nextScriptName {
+	var scriptName = &nextScriptName{}
 	switch nextAction {
 	case CreateScript:
 		if options.NewScriptPrefix == nil {
@@ -133,10 +138,10 @@ func obtainScriptName(nextVersion uint, nextAction ScriptAction, options *Option
 		must.True(regexp.MustCompile(`^([0-9]+)_(.*)$`).MatchString(prefix))
 		muststrings.NotContains(prefix, ".")
 
-		// use first up-script suffix as suffix
+		// use first up-script file name suffix as new file name suffix
 		suffix, ok := obtainFirstUpScriptNameSuffix(migrations)
 		if !ok {
-			suffix = zerotern.VV(options.DefaultSuffix, "sql")
+			suffix = options.DefaultSuffix
 		}
 		muststrings.NotContains(suffix, ".")
 
@@ -145,7 +150,7 @@ func obtainScriptName(nextVersion uint, nextAction ScriptAction, options *Option
 
 		scriptName.ReverseName = fmt.Sprintf("%s.%s.%s", prefix, source.Down, suffix)
 		must.True(source.DefaultRegex.MatchString(scriptName.ReverseName))
-	case ModifyScript:
+	case UpdateScript:
 		scriptName.ForwardName = resb.P1(migrations.Up(nextVersion)).Raw   // 123_name.up.ext
 		scriptName.ReverseName = resb.P1(migrations.Down(nextVersion)).Raw // 123_name.down.ext
 	default:
@@ -188,7 +193,7 @@ func obtainNextVersion(migrateState enumMigrateState, previousVersion uint, migr
 	// if !options.ForceEdit {
 	mustNoNextNextVersion(migrations, nextVersion) //需要确认获得的这个版本号就是最高的，而不是中间的，你也只能修改最高的
 	// }
-	return nextVersion, ModifyScript
+	return nextVersion, UpdateScript
 }
 
 func mustNoNextNextVersion(migrations *source.Migrations, nextVersion uint) {

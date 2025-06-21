@@ -1,13 +1,10 @@
 package cobramigration
 
 import (
-	"errors"
-	"os"
-
+	"github.com/go-xlan/go-migrate/internal/utils"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/spf13/cobra"
 	"github.com/yyle88/eroticgo"
-	"github.com/yyle88/zaplog"
 )
 
 func NewMigrateCmd(migration *migrate.Migrate) *cobra.Command {
@@ -16,6 +13,15 @@ func NewMigrateCmd(migration *migrate.Migrate) *cobra.Command {
 		Use:   "migrate",
 		Short: "Database migration",
 		Long:  "Database migration",
+		Run: func(cmd *cobra.Command, args []string) {
+			version, dirtyFlag, err := migration.Version()
+			utils.WhistleCause(err) //panic when cause is not expected
+			if dirtyFlag {
+				eroticgo.RED.ShowMessage(version, "(DIRTY)")
+			} else {
+				eroticgo.GREEN.ShowMessage(version)
+			}
+		},
 	}
 
 	rootCmd.AddCommand(newAllCmd(migration)) // Add `all` command
@@ -30,7 +36,7 @@ func newAllCmd(migration *migrate.Migrate) *cobra.Command {
 		Use:   "all",
 		Short: "Run all migration files",
 		Run: func(cmd *cobra.Command, args []string) {
-			whistle(migration.Up()) // Perform upgrade
+			utils.WhistleCause(migration.Up()) // Perform upgrade
 		},
 	}
 }
@@ -40,7 +46,7 @@ func newDecCMD(migration *migrate.Migrate) *cobra.Command {
 		Use:   "dec",
 		Short: "Rollback one step (-1)",
 		Run: func(cmd *cobra.Command, args []string) {
-			whistle(migration.Steps(-1))
+			utils.WhistleCause(migration.Steps(-1))
 		},
 	}
 }
@@ -50,21 +56,7 @@ func newIncCMD(migration *migrate.Migrate) *cobra.Command {
 		Use:   "inc",
 		Short: "Run next step (+1)",
 		Run: func(cmd *cobra.Command, args []string) {
-			whistle(migration.Steps(+1))
+			utils.WhistleCause(migration.Steps(+1))
 		},
 	}
-}
-
-func whistle(cause error) {
-	if cause != nil {
-		if errors.Is(cause, migrate.ErrNoChange) {
-			zaplog.SUG.Debugln(eroticgo.BLUE.Sprint("NO MIGRATION FILES TO RUN"))
-		} else if errors.Is(cause, os.ErrNotExist) {
-			zaplog.SUG.Debugln(eroticgo.BLUE.Sprint("MIGRATION FILES NOT FOUND"))
-		} else {
-			zaplog.SUG.Panicln(eroticgo.RED.Sprint("MIGRATION FAILED:"), cause)
-		}
-		return
-	}
-	zaplog.SUG.Debugln(eroticgo.GREEN.Sprint("MIGRATION SUCCESS"))
 }

@@ -1,6 +1,8 @@
 package newscripts
 
-import "github.com/go-xlan/go-migrate/checkmigration"
+import (
+	"github.com/go-xlan/go-migrate/checkmigration"
+)
 
 type ScriptAction string
 

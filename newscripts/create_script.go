@@ -30,7 +30,7 @@ const (
 	onceMigrated enumMigrateState = "once-migrated"
 )
 
-func GetNextScriptName(migration *migrate.Migrate, options *Options) *NextScript {
+func GetNextScriptName(migration *migrate.Migrate, options *Options, naming *ScriptNaming) *NextScript {
 	var migrateState enumMigrateState
 	version, dirtyFlag, err := migration.Version()
 	if err != nil {
@@ -51,7 +51,7 @@ func GetNextScriptName(migration *migrate.Migrate, options *Options) *NextScript
 
 	nextVersion, nextAction := obtainNextVersion(migrateState, version, migrations, options)
 	mustnum.Gt(nextVersion, version)
-	scriptNames := obtainScriptNames(nextVersion, nextAction, options, migrations)
+	scriptNames := obtainScriptNames(nextVersion, nextAction, options, migrations, naming)
 	checkScriptName(scriptNames, version)
 
 	zaplog.SUG.Debugln("next-action:", nextAction)
@@ -125,15 +125,11 @@ type nextScriptName struct {
 	ReverseName string
 }
 
-func obtainScriptNames(nextVersion uint, nextAction ScriptAction, options *Options, migrations *source.Migrations) *nextScriptName {
+func obtainScriptNames(nextVersion uint, nextAction ScriptAction, options *Options, migrations *source.Migrations, naming *ScriptNaming) *nextScriptName {
 	var scriptName = &nextScriptName{}
 	switch nextAction {
 	case CreateScript:
-		if options.NewScriptPrefix == nil {
-			panic(erero.Errorf("CAN NOT GET new-script-name WHEN next-version=%v", nextVersion))
-		}
-
-		prefix := options.NewScriptPrefix(nextVersion)
+		prefix := naming.NewScriptPrefix(nextVersion)
 		muststrings.Contains(prefix, "_")
 		must.True(regexp.MustCompile(`^([0-9]+)_(.*)$`).MatchString(prefix))
 		muststrings.NotContains(prefix, ".")

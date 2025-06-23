@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	sqlForceBreakStatement = "SELECT 1 / 0;" //当逻辑没有实现的时候，就返回个异常，提醒开发者修改代码
+	// 需要抛出异常 "SELECT 1 / 0;" 这句不行，在脚本里竟然能被执行通过，没有起到 panic 的效果
+	raiseStatement = "SELECT TODO / PANIC / RAISE / THROW;" //当逻辑没有实现的时候，就返回个异常，提醒开发者修改代码
 )
 
 type MigrationKind struct {
@@ -52,7 +53,7 @@ func (op *MigrationOp) GetForwardSQL() string {
 }
 
 func (op *MigrationOp) GetReverseSQL() (string, bool) {
-	return sqlForceBreakStatement + " -- " + op.Kind.ReverseSubstr, false //认为肯定有更好的工具来做这件事，这里暂时不要实现这个功能(别整太复杂反正早期也没人用的)
+	return raiseStatement + " -- " + op.Kind.ReverseSubstr, false //认为肯定有更好的工具来做这件事，这里暂时不要实现这个功能(别整太复杂反正早期也没人用的)
 }
 
 type MigrationOps []*MigrationOp
@@ -99,7 +100,7 @@ func (ops MigrationOps) GetReverseScript() (string, bool) {
 		}
 		okk = false //只要有一个出错，就记录下来有错
 		reverseSQL = zerotern.VF(reverseSQL, func() string {
-			return sqlForceBreakStatement + " -- " + op.Kind.ReverseSubstr
+			return raiseStatement + " -- " + op.Kind.ReverseSubstr
 		})
 		forwardSQL := op.GetForwardSQL()
 		sqLine := fmt.Sprintf("-- reverse -- %s;\n%s; -- TODO", forwardSQL, reverseSQL)

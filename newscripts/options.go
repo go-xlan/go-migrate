@@ -30,7 +30,7 @@ type VersionPattern string
 const (
 	VersionNext VersionPattern = "NEXT" // 自动递增编号，例如 00001, 00002
 	VersionUnix VersionPattern = "UNIX" // 以 Unix 时间戳为版本号，例如 1678693920
-	VersionTime VersionPattern = "TIME" // 格式化时间，年月日+时间，例如 202506211030
+	VersionTime VersionPattern = "TIME" // 格式化时间，纯数字的 年月日+时分秒 版本号，例如 20250621103045
 )
 
 func parseVersionType(s string) VersionPattern {
@@ -65,7 +65,7 @@ func (T *ScriptNaming) newVersion(versionNum uint) string {
 	case VersionUnix:
 		return strconv.FormatInt(time.Now().Unix(), 10) // 当前 Unix 时间戳（秒数）
 	case VersionTime:
-		return time.Now().Format("200601021504") // 格式：YYYYMMDDHHMM，例如 202506211030
+		return time.Now().Format("20060102150405") // 格式：YYYYMMDDHHMMSS，例如 20250621103045
 	default:
 		panic("unknown VersionPattern: " + string(T.VersionType)) // 如果没有匹配，返回空字符串或 panic
 	}

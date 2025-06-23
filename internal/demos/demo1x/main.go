@@ -22,11 +22,9 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// go run main.go next-script create --version-type TIME --description create_table
-// go run main.go migrate all
 func main() {
 	db := newGormDB(&MysqlConfig{
-		Source:   "tcp(localhost:3306)/xlan_migrate_demo1x?charset=utf8mb4&parseTime=true",
+		Source:   "tcp(localhost:3306)/xlan_migrate_demo1x?charset=utf8mb4&parseTime=true&multiStatements=true",
 		Username: "root",
 		Password: "123456",
 	})
@@ -42,31 +40,26 @@ func main() {
 		},
 	))
 
-	options := newscripts.NewOptions(scriptsInRoot)
-	nextScriptCmd := newscripts.NextScriptCmd(&newscripts.Config{
-		Migration: migration,
-		Options:   options,
-		DB:        db,
-		Objects: []any{
-			sample(&models.UserV1{}, &models.UserV2{}, &models.UserV3{}),
-			sample(&models.InfoV1{}, &models.InfoV2{}, &models.InfoV3{}),
-		},
-	})
-
-	newMigrateCmd := cobramigration.NewMigrateCmd(migration)
-
 	var rootCmd = &cobra.Command{
 		Use:   "main",
 		Short: "main",
 		Long:  "main",
 	}
-	rootCmd.AddCommand(nextScriptCmd)
-	rootCmd.AddCommand(newMigrateCmd)
+	rootCmd.AddCommand(newscripts.NextScriptCmd(&newscripts.Config{
+		Migration: migration,
+		Options:   newscripts.NewOptions(scriptsInRoot),
+		DB:        db,
+		Objects: []any{
+			randomSample(&models.UserV1{}, &models.UserV2{}, &models.UserV3{}),
+			randomSample(&models.InfoV1{}, &models.InfoV2{}, &models.InfoV3{}),
+		},
+	}))
+	rootCmd.AddCommand(cobramigration.NewMigrateCmd(migration))
 
 	must.Done(rootCmd.Execute())
 }
 
-func sample(objects ...interface{}) any {
+func randomSample(objects ...interface{}) any {
 	must.Have(objects)
 	idx := rand.IntN(len(objects))
 	return objects[idx]

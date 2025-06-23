@@ -30,7 +30,7 @@ const (
 	onceMigrated enumMigrateState = "once-migrated"
 )
 
-func GetNextScriptName(migration *migrate.Migrate, options *Options, naming *ScriptNaming) *NextScript {
+func GetNextScriptInfo(migration *migrate.Migrate, options *Options, naming *ScriptNaming) *NextScriptInfo {
 	var migrateState enumMigrateState
 	version, dirtyFlag, err := migration.Version()
 	if err != nil {
@@ -57,7 +57,7 @@ func GetNextScriptName(migration *migrate.Migrate, options *Options, naming *Scr
 	zaplog.SUG.Debugln("next-action:", nextAction)
 	zaplog.SUG.Debugln("script-name:", neatjsons.S(scriptNames))
 
-	return &NextScript{
+	return &NextScriptInfo{
 		Action:      nextAction,
 		ForwardName: scriptNames.ForwardName,
 		ReverseName: scriptNames.ReverseName,

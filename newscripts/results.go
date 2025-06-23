@@ -1,7 +1,10 @@
 package newscripts
 
 import (
+	"path/filepath"
+
 	"github.com/go-xlan/go-migrate/checkmigration"
+	"github.com/yyle88/osexistpath/osmustexist"
 )
 
 type ScriptAction string
@@ -11,16 +14,26 @@ const (
 	UpdateScript ScriptAction = "update-script"
 )
 
-type NextScript struct {
+type NextScriptInfo struct {
 	Action      ScriptAction
 	ForwardName string
 	ReverseName string
 }
 
-func (next *NextScript) WriteScripts(migrationOps checkmigration.MigrationOps, options *Options) {
+func (scriptInfo *NextScriptInfo) WriteScripts(migrationOps checkmigration.MigrationOps, options *Options) {
 	forwardScript := migrationOps.GetForwardScript()
-	mustWriteScript(next.Action, next.ForwardName, forwardScript, options)
+	mustWriteScript(scriptInfo.Action, scriptInfo.ForwardName, forwardScript, options)
 
 	reverseScript, _ := migrationOps.GetReverseScript()
-	mustWriteScript(next.Action, next.ReverseName, reverseScript, options)
+	mustWriteScript(scriptInfo.Action, scriptInfo.ReverseName, reverseScript, options)
+}
+
+func (scriptInfo *NextScriptInfo) ScriptExists(options *Options) bool {
+	if osmustexist.IsFile(filepath.Join(options.ScriptsInRoot, scriptInfo.ForwardName)) {
+		return true
+	}
+	if osmustexist.IsFile(filepath.Join(options.ScriptsInRoot, scriptInfo.ReverseName)) {
+		return true
+	}
+	return false
 }

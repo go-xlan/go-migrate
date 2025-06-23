@@ -34,8 +34,8 @@ func NextScriptCmd(config *Config) *cobra.Command {
 				eroticgo.GREEN.ShowMessage(version)
 			}
 
-			nextScript := GetNextScriptName(config.Migration, config.Options, NewScriptNaming())
-			zaplog.SUG.Infoln("next-script-name:", neatjsons.S(nextScript))
+			scriptInfo := GetNextScriptInfo(config.Migration, config.Options, NewScriptNaming())
+			zaplog.SUG.Infoln("next-script-info:", neatjsons.S(scriptInfo))
 
 			migrationOps := checkmigration.GetMigrateOps(config.DB, config.Objects)
 			if len(migrationOps) > 0 {
@@ -57,7 +57,7 @@ func NextScriptCmd(config *Config) *cobra.Command {
 }
 
 func createNewScriptCmd(config *Config) *cobra.Command {
-	var versionTypeStr string
+	var versionTypeInput string
 	var description string
 
 	cmd := &cobra.Command{
@@ -65,23 +65,24 @@ func createNewScriptCmd(config *Config) *cobra.Command {
 		Short: "create new migration script",
 		Run: func(cmd *cobra.Command, args []string) {
 			// 将字符串转换为 VersionPattern 枚举
-			versionType := parseVersionType(versionTypeStr)
+			versionType := parseVersionType(versionTypeInput)
 
 			// 创建 ScriptNaming（传入参数）
 			scriptNaming := &ScriptNaming{
 				VersionType: versionType,
 				Description: description,
 			}
+			zaplog.SUG.Infoln("script-naming:", neatjsons.S(scriptNaming))
 
 			// 获取下一组脚本名
-			nextScript := GetNextScriptName(config.Migration, config.Options, scriptNaming)
-			zaplog.SUG.Infoln("create-script:", neatjsons.S(nextScript))
-			must.Same(nextScript.Action, CreateScript)
+			scriptInfo := GetNextScriptInfo(config.Migration, config.Options, scriptNaming)
+			zaplog.SUG.Infoln("create-script:", neatjsons.S(scriptInfo))
+			must.Same(scriptInfo.Action, CreateScript)
 
 			// 获取迁移操作并生成文件
 			migrateOps := checkmigration.GetMigrateOps(config.DB, config.Objects)
-			if len(migrateOps) > 0 {
-				nextScript.WriteScripts(migrateOps, config.Options)
+			if len(migrateOps) > 0 || scriptInfo.ScriptExists(config.Options) {
+				scriptInfo.WriteScripts(migrateOps, config.Options)
 			}
 
 			eroticgo.GREEN.ShowMessage("SUCCESS")
@@ -89,7 +90,7 @@ func createNewScriptCmd(config *Config) *cobra.Command {
 	}
 
 	// 增加 flag 参数
-	cmd.Flags().StringVarP(&versionTypeStr, "version-type", "t", "NEXT", "version pattern: NEXT, UNIX, TIME")
+	cmd.Flags().StringVarP(&versionTypeInput, "version-type", "t", "NEXT", "version pattern: NEXT, UNIX, TIME")
 	cmd.Flags().StringVarP(&description, "description", "d", "script", "description for migration file name")
 
 	return cmd
@@ -100,13 +101,13 @@ func updateTopScriptCmd(config *Config) *cobra.Command {
 		Use:   "update",
 		Short: "update top migration script",
 		Run: func(cmd *cobra.Command, args []string) {
-			nextScript := GetNextScriptName(config.Migration, config.Options, NewScriptNaming())
-			zaplog.SUG.Infoln("update-script:", neatjsons.S(nextScript))
-			must.Same(nextScript.Action, UpdateScript) //需要符合预期
+			scriptInfo := GetNextScriptInfo(config.Migration, config.Options, NewScriptNaming())
+			zaplog.SUG.Infoln("update-script:", neatjsons.S(scriptInfo))
+			must.Same(scriptInfo.Action, UpdateScript) //需要符合预期
 
 			migrateOps := checkmigration.GetMigrateOps(config.DB, config.Objects)
-			if len(migrateOps) > 0 {
-				nextScript.WriteScripts(migrateOps, config.Options)
+			if len(migrateOps) > 0 || scriptInfo.ScriptExists(config.Options) {
+				scriptInfo.WriteScripts(migrateOps, config.Options)
 			}
 			eroticgo.GREEN.ShowMessage("SUCCESS")
 		},

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"math/rand/v2"
 	"os"
@@ -24,9 +23,7 @@ import (
 
 func main() {
 	db := newGormDB(&MysqlConfig{
-		Source:   "tcp(localhost:3306)/xlan_migrate_demo1x?charset=utf8mb4&parseTime=true&multiStatements=true",
-		Username: "root",
-		Password: "123456",
+		Dsn: "root:123456@tcp(localhost:3306)/xlan_migrate_demo1x?charset=utf8mb4&parseTime=true&multiStatements=true",
 	})
 	defer rese.F0(rese.P1(db.DB()).Close)
 
@@ -66,16 +63,12 @@ func randomSample(objects ...interface{}) any {
 }
 
 type MysqlConfig struct {
-	Source   string
-	Username string
-	Password string
+	Dsn string
 }
 
 func newGormDB(cfg *MysqlConfig) *gorm.DB {
-	dsn := fmt.Sprintf("%s:%s@%s", must.Nice(cfg.Username), must.Nice(cfg.Password), must.Nice(cfg.Source))
-
 	db := rese.P1(gorm.Open(
-		mysql.Open(dsn),
+		mysql.Open(cfg.Dsn),
 		&gorm.Config{
 			Logger: logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), logger.Config{
 				SlowThreshold:             200 * time.Millisecond,

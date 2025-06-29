@@ -59,6 +59,7 @@ func NextScriptCmd(config *Config) *cobra.Command {
 func createNewScriptCmd(config *Config) *cobra.Command {
 	var versionTypeInput string
 	var description string
+	var allowEmptyScript bool
 
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -81,7 +82,7 @@ func createNewScriptCmd(config *Config) *cobra.Command {
 
 			// 获取迁移操作并生成文件
 			migrateOps := checkmigration.GetMigrateOps(config.DB, config.Objects)
-			if len(migrateOps) > 0 || scriptInfo.ScriptExists(config.Options) {
+			if len(migrateOps) > 0 || allowEmptyScript || scriptInfo.ScriptExists(config.Options) {
 				scriptInfo.WriteScripts(migrateOps, config.Options)
 			}
 
@@ -92,6 +93,7 @@ func createNewScriptCmd(config *Config) *cobra.Command {
 	// 增加 flag 参数
 	cmd.Flags().StringVarP(&versionTypeInput, "version-type", "t", "NEXT", "version pattern: NEXT, UNIX, TIME")
 	cmd.Flags().StringVarP(&description, "description", "d", "script", "description for migration file name")
+	cmd.Flags().BoolVarP(&allowEmptyScript, "allow-empty-script", "e", false, "allow creating script when no schema changes")
 
 	return cmd
 }

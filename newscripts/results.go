@@ -37,3 +37,10 @@ func (scriptInfo *NextScriptInfo) ScriptExists(options *Options) bool {
 	}
 	return false
 }
+
+func (scriptInfo *NextScriptInfo) GetScriptNames() *NextScriptNames {
+	return &NextScriptNames{
+		ForwardName: scriptInfo.ForwardName,
+		ReverseName: scriptInfo.ReverseName,
+	}
+}

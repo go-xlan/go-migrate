@@ -109,24 +109,24 @@ func mustWriteScript(nextAction ScriptAction, shortName string, scriptContent st
 	zaplog.SUG.Debugln("done")
 }
 
-func checkScriptName(scriptName *nextScriptName, previousVersion uint) {
-	zaplog.LOG.Debug("check", zap.String("forward_name", scriptName.ForwardName))
-	mig1 := rese.P1(source.DefaultParse(must.Nice(scriptName.ForwardName)))
+func checkScriptName(scriptNames *NextScriptNames, previousVersion uint) {
+	zaplog.LOG.Debug("check", zap.String("forward_name", scriptNames.ForwardName))
+	mig1 := rese.P1(source.DefaultParse(must.Nice(scriptNames.ForwardName)))
 	mustnum.Gt(mig1.Version, previousVersion)
 
-	mig2 := rese.P1(source.DefaultParse(must.Nice(scriptName.ReverseName)))
+	mig2 := rese.P1(source.DefaultParse(must.Nice(scriptNames.ReverseName)))
 	mustnum.Gt(mig2.Version, previousVersion)
 
 	must.Same(mig1.Version, mig2.Version)
 }
 
-type nextScriptName struct {
+type NextScriptNames struct {
 	ForwardName string
 	ReverseName string
 }
 
-func obtainScriptNames(nextVersion uint, nextAction ScriptAction, options *Options, migrations *source.Migrations, naming *ScriptNaming) *nextScriptName {
-	var scriptName = &nextScriptName{}
+func obtainScriptNames(nextVersion uint, nextAction ScriptAction, options *Options, migrations *source.Migrations, naming *ScriptNaming) *NextScriptNames {
+	var scriptNames = &NextScriptNames{}
 	switch nextAction {
 	case CreateScript:
 		prefix := naming.NewScriptPrefix(nextVersion)
@@ -141,18 +141,18 @@ func obtainScriptNames(nextVersion uint, nextAction ScriptAction, options *Optio
 		}
 		muststrings.NotContains(suffix, ".")
 
-		scriptName.ForwardName = fmt.Sprintf("%s.%s.%s", prefix, source.Up, suffix)
-		must.True(source.DefaultRegex.MatchString(scriptName.ForwardName))
+		scriptNames.ForwardName = fmt.Sprintf("%s.%s.%s", prefix, source.Up, suffix)
+		must.True(source.DefaultRegex.MatchString(scriptNames.ForwardName))
 
-		scriptName.ReverseName = fmt.Sprintf("%s.%s.%s", prefix, source.Down, suffix)
-		must.True(source.DefaultRegex.MatchString(scriptName.ReverseName))
+		scriptNames.ReverseName = fmt.Sprintf("%s.%s.%s", prefix, source.Down, suffix)
+		must.True(source.DefaultRegex.MatchString(scriptNames.ReverseName))
 	case UpdateScript:
-		scriptName.ForwardName = resb.P1(migrations.Up(nextVersion)).Raw   // 123_name.up.ext
-		scriptName.ReverseName = resb.P1(migrations.Down(nextVersion)).Raw // 123_name.down.ext
+		scriptNames.ForwardName = resb.P1(migrations.Up(nextVersion)).Raw   // 123_name.up.ext
+		scriptNames.ReverseName = resb.P1(migrations.Down(nextVersion)).Raw // 123_name.down.ext
 	default:
 		panic(erero.Errorf("IMPOSSIBLE case-value=%v", nextAction))
 	}
-	return scriptName
+	return scriptNames
 }
 
 func obtainFirstUpScriptNameSuffix(migrations *source.Migrations) (string, bool) {

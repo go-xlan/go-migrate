@@ -77,7 +77,15 @@ func createNewScriptCmd(config *Config) *cobra.Command {
 
 			// 获取下一组脚本名
 			scriptInfo := GetNextScriptInfo(config.Migration, config.Options, scriptNaming)
-			zaplog.SUG.Infoln("create-script:", neatjsons.S(scriptInfo))
+			zaplog.SUG.Infoln("script-names:", neatjsons.S(scriptInfo.GetScriptNames()))
+
+			// 假设系统建议你更新最新的脚本内容，而你选择的是创建，就报错
+			if scriptInfo.Action == UpdateScript {
+				eroticgo.RED.ShowMessage("FAILED. Use [update script] when THERE ARE UNMIGRATED SCRIPTS.")
+				zaplog.SUG.Infoln(eroticgo.RED.Sprint("FAILED"))
+				return
+			}
+			// 需要符合预期-避免出现其它情况，比如既非创建也非更新的其它情况
 			must.Same(scriptInfo.Action, CreateScript)
 
 			// 获取迁移操作并生成文件
@@ -104,8 +112,16 @@ func updateTopScriptCmd(config *Config) *cobra.Command {
 		Short: "update top migration script",
 		Run: func(cmd *cobra.Command, args []string) {
 			scriptInfo := GetNextScriptInfo(config.Migration, config.Options, NewScriptNaming())
-			zaplog.SUG.Infoln("update-script:", neatjsons.S(scriptInfo))
-			must.Same(scriptInfo.Action, UpdateScript) //需要符合预期
+			zaplog.SUG.Infoln("script-names:", neatjsons.S(scriptInfo.GetScriptNames()))
+
+			// 假设系统建议你创建最脚本内容，而你选择的是更新旧文件，就报错
+			if scriptInfo.Action == CreateScript {
+				eroticgo.RED.ShowMessage("FAILED. Use [create script] when THERE ARE NO UNMIGRATED SCRIPTS.")
+				zaplog.SUG.Infoln(eroticgo.RED.Sprint("FAILED"))
+				return
+			}
+			// 需要符合预期-避免出现其它情况，比如既非创建也非更新的其它情况
+			must.Same(scriptInfo.Action, UpdateScript)
 
 			migrateOps := checkmigration.GetMigrateOps(config.DB, config.Objects)
 			if len(migrateOps) > 0 || scriptInfo.ScriptExists(config.Options) {

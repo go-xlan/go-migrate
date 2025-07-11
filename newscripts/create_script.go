@@ -77,18 +77,15 @@ func newMigrationsFromPath(scriptsInRoot string) *source.Migrations {
 	return migrations
 }
 
-func mustWriteScript(nextAction ScriptAction, shortName string, scriptContent string, options *Options) {
+func mustWriteScript(nextAction ScriptAction, shortName string, script string, options *Options) {
 	var path = filepath.Join(options.ScriptsInRoot, shortName)
-	var perm os.FileMode
 	if nextAction == CreateScript {
 		must.False(osmustexist.IsFile(path))
-		perm = 0644
 	} else {
+		must.Same(nextAction, UpdateScript)
 		osmustexist.FILE(path)
-		stat := rese.V1(os.Stat(path))
-		perm = stat.Mode().Perm()
 	}
-	zaplog.SUG.Debugln("path:", path, "script-content:", scriptContent)
+	zaplog.SUG.Debugln("path:", path, "script:", script)
 	if options.DryRun {
 		zaplog.SUG.Debugln("dry-run mode", options.DryRun)
 		return
@@ -105,7 +102,8 @@ func mustWriteScript(nextAction ScriptAction, shortName string, scriptContent st
 			return
 		}
 	}
-	must.Done(os.WriteFile(path, []byte(scriptContent), perm))
+	// when file exist WriteFile truncates it before writing, without changing permissions.
+	must.Done(os.WriteFile(path, []byte(script), 0644))
 	zaplog.SUG.Debugln("done")
 }
 

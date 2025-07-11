@@ -18,7 +18,7 @@ require (
 	github.com/yyle88/rese v0.0.10
 	github.com/yyle88/runpath v1.0.23
 	github.com/yyle88/tern v0.0.8
-	github.com/yyle88/zaplog v0.0.25
+	github.com/yyle88/zaplog v0.0.26
 	go.uber.org/zap v1.27.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
@@ -47,8 +47,8 @@ require (
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
-	github.com/yyle88/mutexmap v1.0.13 // indirect
-	github.com/yyle88/sure v0.0.38 // indirect
+	github.com/yyle88/mutexmap v1.0.14 // indirect
+	github.com/yyle88/sure v0.0.39 // indirect
 	github.com/yyle88/syntaxgo v0.0.53 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
@@ -57,6 +57,5 @@ require (
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/term v0.27.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

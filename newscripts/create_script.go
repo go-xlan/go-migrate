@@ -1,3 +1,12 @@
+// Package newscripts: Intelligent migration script generation and management system
+// Provides automated script creation with version control and naming conventions
+// Features smart version progression and content generation based on database schema changes
+// Integrates with GORM model analysis to generate appropriate migration scripts
+//
+// newscripts: 智能迁移脚本生成和管理系统
+// 提供自动化脚本创建，具有版本控制和命名约定
+// 具有基于数据库结构变化的智能版本进展和内容生成
+// 与 GORM 模型分析集成，生成适当的迁移脚本
 package newscripts
 
 import (
@@ -23,13 +32,25 @@ import (
 	"go.uber.org/zap"
 )
 
+// enumMigrateState represents the current migration state of the database
+// Used to determine appropriate version progression and script creation strategy
+//
+// enumMigrateState 表示数据库的当前迁移状态
+// 用于确定适当的版本进展和脚本创建策略
 type enumMigrateState string
 
 const (
-	noneMigrated enumMigrateState = "none-migrated"
-	onceMigrated enumMigrateState = "once-migrated"
+	noneMigrated enumMigrateState = "none-migrated" // No previous migrations // 无先前迁移
+	onceMigrated enumMigrateState = "once-migrated" // Has migration history // 有迁移历史
 )
 
+// GetNextScriptInfo analyzes current migration state and determines next script information
+// Examines existing migration files and database version to calculate appropriate next action
+// Returns script naming details and action type for migration script creation
+//
+// GetNextScriptInfo 分析当前迁移状态并确定下一个脚本信息
+// 检查现有迁移文件和数据库版本来计算适当的下一步操作
+// 返回用于迁移脚本创建的脚本命名详情和操作类型
 func GetNextScriptInfo(migration *migrate.Migrate, options *Options, naming *ScriptNaming) *NextScriptInfo {
 	var migrateState enumMigrateState
 	version, dirtyFlag, err := migration.Version()
@@ -77,6 +98,13 @@ func newMigrationsFromPath(scriptsInRoot string) *source.Migrations {
 	return migrations
 }
 
+// mustWriteScript writes migration script to file system with safety checks and user confirmation
+// Validates file paths and handles both create and update scenarios
+// Supports dry-run mode and interactive confirmation for safe script generation
+//
+// mustWriteScript 将迁移脚本写入文件系统，具有安全检查和用户确认
+// 验证文件路径并处理创建和更新场景
+// 支持试运行模式和交互式确认，实现安全的脚本生成
 func mustWriteScript(nextAction ScriptAction, shortName string, script string, options *Options) {
 	var path = filepath.Join(options.ScriptsInRoot, shortName)
 	if nextAction == CreateScript {

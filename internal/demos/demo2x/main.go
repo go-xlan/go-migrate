@@ -10,6 +10,7 @@ import (
 	"github.com/go-xlan/go-migrate/internal/demos/demo2x/internal/models"
 	"github.com/go-xlan/go-migrate/newmigrate"
 	"github.com/go-xlan/go-migrate/newscripts"
+	"github.com/go-xlan/go-migrate/previewmigrate"
 	postgresmigrate "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/spf13/cobra"
 	"github.com/yyle88/must"
@@ -53,6 +54,7 @@ func main() {
 		},
 	}))
 	rootCmd.AddCommand(cobramigration.NewMigrateCmd(migration))
+	rootCmd.AddCommand(previewmigrate.NewPreviewCmd(migration, db, scriptsInRoot))
 
 	must.Done(rootCmd.Execute())
 }

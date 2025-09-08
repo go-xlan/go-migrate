@@ -15,6 +15,7 @@ Intelligent database migration toolkit with GORM model integration and automated
 - 🔄 **Flexible Migration Strategies**: Support file-based, embedded, and database-driven approaches
 - 🎯 **Comprehensive CLI**: User-friendly Cobra commands for all migration operations
 - 🛡️ **Safe Operations**: DryRun mode and interactive confirmation for secure migrations
+- 🔍 **Migration Preview**: Zero-cost error recovery with transaction rollback testing
 - 🔗 **Multi-Database Support**: Works with MySQL, PostgreSQL, SQLite through golang-migrate
 
 ## 📦 Installation
@@ -68,6 +69,7 @@ package main
 
 import (
     "github.com/go-xlan/go-migrate/cobramigration"
+    "github.com/go-xlan/go-migrate/previewmigrate"
     "github.com/go-xlan/go-migrate/newscripts"
     "github.com/spf13/cobra"
     "github.com/yyle88/must"
@@ -82,6 +84,7 @@ func main() {
     
     // Add migration commands
     rootCmd.AddCommand(cobramigration.NewMigrateCmd(migration))
+    rootCmd.AddCommand(previewmigrate.NewPreviewCmd(migration, db, "./scripts"))
     rootCmd.AddCommand(newscripts.NextScriptCmd(&newscripts.Config{
         Migration: migration,
         Options:   newscripts.NewOptions("./scripts"),
@@ -113,6 +116,7 @@ func main() {
 - `migrate all` - Execute all pending migrations
 - `migrate inc` - Run next migration step
 - `migrate dec` - Rollback one migration step
+- `preview inc` - Preview next migration without changes
 
 ## 📁 Project Structure
 
@@ -122,6 +126,7 @@ go-migrate/
 ├── newmigrate/         # Migration instance factory
 ├── newscripts/         # Script generation and management  
 ├── cobramigration/     # Cobra CLI integration
+├── previewmigrate/     # Migration preview and testing
 └── internal/           # Demos, examples, and utilities
     ├── demos/          # Complete demo applications
     ├── examples/       # Usage examples
@@ -207,7 +212,8 @@ cd internal/demos/demo1x
 make CREATE-SCRIPT-CREATE-TABLE
 make CREATE-SCRIPT-ALTER-SCHEMA
 
-# Execute migrations
+# Preview and execute migrations
+make MIGRATE-PREVIEW-INC
 make MIGRATE-ALL
 make MIGRATE-INC
 ```
@@ -221,13 +227,14 @@ cd internal/demos/demo2x
 make CREATE-SCRIPT-CREATE-TABLE
 make CREATE-SCRIPT-ALTER-SCHEMA
 
-# Execute migrations
+# Preview and execute migrations
+make MIGRATE-PREVIEW-INC
 make MIGRATE-ALL
 make MIGRATE-INC
 ```
 
 <!-- TEMPLATE (EN) BEGIN: STANDARD PROJECT FOOTER -->
-<!-- VERSION 2025-08-29 08:33:43.829511 +0000 UTC -->
+<!-- VERSION 2025-09-06 04:53:24.895249 +0000 UTC -->
 
 ## 📄 License
 
@@ -242,12 +249,12 @@ Contributions are welcome! Report bugs, suggest features, and contribute code:
 - 🐛 **Found a bug?** Open an issue on GitHub with reproduction steps
 - 💡 **Have a feature idea?** Create an issue to discuss the suggestion
 - 📖 **Documentation confusing?** Report it so we can improve
-- 🚀 **Need new features?** Share your use cases to help us understand requirements
-- ⚡ **Performance issue?** Help us optimize by reporting slow operations
+- 🚀 **Need new features?** Share the use cases to help us understand requirements
+- ⚡ **Performance issue?** Help us optimize via reporting slow operations
 - 🔧 **Configuration problem?** Ask questions about complex setups
-- 📢 **Follow project progress?** Watch the repo for new releases and features
-- 🌟 **Success stories?** Share how this package improved your workflow
-- 💬 **General feedback?** All suggestions and comments are welcome
+- 📢 **Follow project progress?** Watch the repo to get new releases and features
+- 🌟 **Success stories?** Share how this package improved the workflow
+- 💬 **Common feedback?** Each suggestion and comment is welcome
 
 ---
 
@@ -255,13 +262,13 @@ Contributions are welcome! Report bugs, suggest features, and contribute code:
 
 New code contributions, follow this process:
 
-1. **Fork**: Fork the repo on GitHub (using the webpage interface).
-2. **Clone**: Clone the forked project (`git clone https://github.com/yourname/go-migrate.git`).
-3. **Navigate**: Navigate to the cloned project (`cd go-migrate`)
+1. **Fork**: Fork the repo on GitHub (using the webpage UI).
+2. **Clone**: Clone the forked project (`git clone https://github.com/yourname/repo-name.git`).
+3. **Navigate**: Navigate to the cloned project (`cd repo-name`)
 4. **Branch**: Create a feature branch (`git checkout -b feature/xxx`).
-5. **Code**: Implement your changes with comprehensive tests
+5. **Code**: Implement the changes with comprehensive tests
 6. **Testing**: (Golang project) Ensure tests pass (`go test ./...`) and follow Go code style conventions
-7. **Documentation**: Update documentation for user-facing changes and use meaningful commit messages
+7. **Documentation**: Update documentation to support client-facing changes and use significant commit messages
 8. **Stage**: Stage changes (`git add .`)
 9. **Commit**: Commit changes (`git commit -m "Add feature xxx"`) ensuring backward compatible code
 10. **Push**: Push to the branch (`git push origin feature/xxx`).
@@ -273,7 +280,7 @@ Please ensure tests pass and include relevant documentation updates.
 
 ## 🌟 Support
 
-Welcome to contribute to this project by submitting pull requests and reporting issues.
+Welcome to contribute to this project via submitting merge requests and reporting issues.
 
 **Project Support:**
 

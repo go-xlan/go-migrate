@@ -15,6 +15,7 @@
 - 🔄 **灵活迁移策略**：支持基于文件、嵌入式和数据库驱动的方式
 - 🎯 **全面 CLI 支持**：用户友好的 Cobra 命令覆盖所有迁移操作
 - 🛡️ **安全操作模式**：DryRun 模式和交互式确认保障迁移安全
+- 🔍 **迁移预览功能**：事务回滚测试实现零成本错误恢复
 - 🔗 **多数据库兼容**：通过 golang-migrate 支持 MySQL、PostgreSQL、SQLite
 
 ## 📦 安装
@@ -227,7 +228,7 @@ make MIGRATE-INC
 ```
 
 <!-- TEMPLATE (ZH) BEGIN: STANDARD PROJECT FOOTER -->
-<!-- VERSION 2025-08-29 08:33:43.829511 +0000 UTC -->
+<!-- VERSION 2025-09-06 04:53:24.895249 +0000 UTC -->
 
 ## 📄 许可证类型
 
@@ -256,8 +257,8 @@ MIT 许可证。详见 [LICENSE](LICENSE)。
 新代码贡献，请遵循此流程：
 
 1. **Fork**：在 GitHub 上 Fork 仓库（使用网页界面）
-2. **克隆**：克隆 Fork 的项目（`git clone https://github.com/yourname/go-migrate.git`）
-3. **导航**：进入克隆的项目（`cd go-migrate`）
+2. **克隆**：克隆 Fork 的项目（`git clone https://github.com/yourname/repo-name.git`）
+3. **导航**：进入克隆的项目（`cd repo-name`）
 4. **分支**：创建功能分支（`git checkout -b feature/xxx`）
 5. **编码**：实现您的更改并编写全面的测试
 6. **测试**：（Golang 项目）确保测试通过（`go test ./...`）并遵循 Go 代码风格约定

@@ -16,8 +16,14 @@ UPDATE-SCRIPT:
 MIGRATE-ALL:
 	go run main.go migrate all
 
+MIGRATE-PREVIEW-INC:
+	go run main.go preview inc
+
 MIGRATE-INC:
 	go run main.go migrate inc
+
+#MIGRATE-PREVIEW-DEC:
+#	go run main.go preview dec
 
 # Do not enable this to avoid unintended destructive operations.
 # 这里不打开是避免误操作导致问题

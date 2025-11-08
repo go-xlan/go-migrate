@@ -27,20 +27,20 @@ import (
 )
 
 // NewPreviewCmd creates preview command for migration dry-run with subcommands
-// Provides safe validation of migration scripts before actual execution
-// Includes subcommands that mirror the migrate command structure
+// Uses lazy initialization - connections created only when command runs (not during command tree building)
+// Migration factory accepts database connection parameter to share single connection (avoiding duplicate connections)
 //
 // NewPreviewCmd 创建具有子命令的迁移试运行预览命令
-// 在实际执行前提供迁移脚本的安全验证
-// 包含镜像迁移命令结构的子命令
-func NewPreviewCmd(migration *migrate.Migrate, db *gorm.DB, scriptsPath string) *cobra.Command {
+// 使用延迟初始化 - 仅在命令运行时创建连接（而非命令树构建时）
+// 迁移工厂接受数据库连接参数以共享单个连接（避免重复连接）
+func NewPreviewCmd(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrate.Migrate, scriptsPath string) *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:   "preview",
 		Short: "Preview migrations (dry-run)",
 		Long:  "Test migration SQL without applying changes",
 	}
 
-	rootCmd.AddCommand(newPreviewIncCmd(migration, db, scriptsPath))
+	rootCmd.AddCommand(newPreviewIncCmd(getDB, getMigration, scriptsPath))
 	return rootCmd
 }
 
@@ -49,12 +49,14 @@ func NewPreviewCmd(migration *migrate.Migrate, db *gorm.DB, scriptsPath string) 
 //
 // newPreviewIncCmd 创建用于预览下一个迁移步骤的命令
 // 在事务中测试下一个迁移 SQL 而不对数据库应用更改
-func newPreviewIncCmd(migration *migrate.Migrate, db *gorm.DB, scriptsPath string) *cobra.Command {
+func newPreviewIncCmd(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrate.Migrate, scriptsPath string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "inc",
 		Short: "Preview next migration step (+1)",
 		Long:  "Test next migration SQL without applying changes",
 		Run: func(cmd *cobra.Command, args []string) {
+			db := getDB()
+			migration := getMigration(db)
 			err := previewNextMigration(migration, db, scriptsPath)
 			if err != nil {
 				zaplog.SUG.Debugln(eroticgo.RED.Sprint("PREVIEW FAILED:"))

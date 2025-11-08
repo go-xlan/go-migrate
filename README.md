@@ -76,22 +76,26 @@ import (
 )
 
 func main() {
-    // Setup database and migration instance (from previous example)
-    db := setupDatabase()
-    migration := setupMigration()
-    
+    // Define functions for on-demand initialization
+    getDB := func() *gorm.DB {
+        return setupDatabase()
+    }
+    getMigration := func(db *gorm.DB) *migrate.Migrate {
+        return setupMigration(db)
+    }
+
     var rootCmd = &cobra.Command{Use: "app"}
-    
+
     // Add migration commands
-    rootCmd.AddCommand(cobramigration.NewMigrateCmd(migration))
-    rootCmd.AddCommand(previewmigrate.NewPreviewCmd(migration, db, "./scripts"))
+    rootCmd.AddCommand(cobramigration.NewMigrateCmd(getDB, getMigration))
+    rootCmd.AddCommand(previewmigrate.NewPreviewCmd(getDB, getMigration, "./scripts"))
     rootCmd.AddCommand(newscripts.NextScriptCmd(&newscripts.Config{
-        Migration: migration,
-        Options:   newscripts.NewOptions("./scripts"),
-        DB:        db,
-        Objects:   []any{&User{}, &Product{}},
+        GetMigration: getMigration,
+        GetDB:        getDB,
+        Options:      newscripts.NewOptions("./scripts"),
+        Objects:      []any{&User{}, &Product{}},
     }))
-    
+
     must.Done(rootCmd.Execute())
 }
 ```
@@ -234,7 +238,7 @@ make MIGRATE-INC
 ```
 
 <!-- TEMPLATE (EN) BEGIN: STANDARD PROJECT FOOTER -->
-<!-- VERSION 2025-09-06 04:53:24.895249 +0000 UTC -->
+<!-- VERSION 2025-09-26 07:39:27.188023 +0000 UTC -->
 
 ## 📄 License
 
@@ -246,15 +250,15 @@ MIT License. See [LICENSE](LICENSE).
 
 Contributions are welcome! Report bugs, suggest features, and contribute code:
 
-- 🐛 **Found a bug?** Open an issue on GitHub with reproduction steps
+- 🐛 **Found a mistake?** Open an issue on GitHub with reproduction steps
 - 💡 **Have a feature idea?** Create an issue to discuss the suggestion
 - 📖 **Documentation confusing?** Report it so we can improve
 - 🚀 **Need new features?** Share the use cases to help us understand requirements
-- ⚡ **Performance issue?** Help us optimize via reporting slow operations
+- ⚡ **Performance issue?** Help us optimize through reporting slow operations
 - 🔧 **Configuration problem?** Ask questions about complex setups
 - 📢 **Follow project progress?** Watch the repo to get new releases and features
 - 🌟 **Success stories?** Share how this package improved the workflow
-- 💬 **Common feedback?** Each suggestion and comment is welcome
+- 💬 **Feedback?** We welcome suggestions and comments
 
 ---
 
@@ -272,7 +276,7 @@ New code contributions, follow this process:
 8. **Stage**: Stage changes (`git add .`)
 9. **Commit**: Commit changes (`git commit -m "Add feature xxx"`) ensuring backward compatible code
 10. **Push**: Push to the branch (`git push origin feature/xxx`).
-11. **PR**: Open a pull request on GitHub (on the GitHub webpage) with detailed description.
+11. **PR**: Open a merge request on GitHub (on the GitHub webpage) with detailed description.
 
 Please ensure tests pass and include relevant documentation updates.
 
@@ -289,7 +293,7 @@ Welcome to contribute to this project via submitting merge requests and reportin
 - 📝 **Write tech blogs** about development tools and workflows - we provide content writing support
 - 🌟 **Join the ecosystem** - committed to supporting open source and the (golang) development scene
 
-**Happy Coding with this package!** 🎉
+**Have Fun Coding with this package!** 🎉🎉🎉
 
 <!-- TEMPLATE (EN) END: STANDARD PROJECT FOOTER -->
 

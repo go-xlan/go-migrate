@@ -75,21 +75,25 @@ import (
 )
 
 func main() {
-    // 设置数据库和迁移实例（来自上一个示例）
-    db := setupDatabase()
-    migration := setupMigration()
-    
+    // 定义工厂函数用于延迟初始化
+    getDB := func() *gorm.DB {
+        return setupDatabase()
+    }
+    getMigration := func(db *gorm.DB) *migrate.Migrate {
+        return setupMigration(db)
+    }
+
     var rootCmd = &cobra.Command{Use: "app"}
-    
+
     // 添加迁移命令
-    rootCmd.AddCommand(cobramigration.NewMigrateCmd(migration))
+    rootCmd.AddCommand(cobramigration.NewMigrateCmd(getDB, getMigration))
     rootCmd.AddCommand(newscripts.NextScriptCmd(&newscripts.Config{
-        Migration: migration,
-        Options:   newscripts.NewOptions("./scripts"),
-        DB:        db,
-        Objects:   []any{&User{}, &Product{}},
+        GetMigration: getMigration,
+        GetDB:        getDB,
+        Options:      newscripts.NewOptions("./scripts"),
+        Objects:      []any{&User{}, &Product{}},
     }))
-    
+
     must.Done(rootCmd.Execute())
 }
 ```
@@ -228,7 +232,7 @@ make MIGRATE-INC
 ```
 
 <!-- TEMPLATE (ZH) BEGIN: STANDARD PROJECT FOOTER -->
-<!-- VERSION 2025-09-06 04:53:24.895249 +0000 UTC -->
+<!-- VERSION 2025-09-26 07:39:27.188023 +0000 UTC -->
 
 ## 📄 许可证类型
 
@@ -248,7 +252,7 @@ MIT 许可证。详见 [LICENSE](LICENSE)。
 - 🔧 **配置困扰？** 询问复杂设置的相关问题
 - 📢 **关注进展？** 关注仓库以获取新版本和功能
 - 🌟 **成功案例？** 分享这个包如何改善工作流程
-- 💬 **意见反馈？** 欢迎所有建议和宝贵意见
+- 💬 **反馈意见？** 欢迎提出建议和意见
 
 ---
 
@@ -266,7 +270,7 @@ MIT 许可证。详见 [LICENSE](LICENSE)。
 8. **暂存**：暂存更改（`git add .`）
 9. **提交**：提交更改（`git commit -m "Add feature xxx"`）确保向后兼容的代码
 10. **推送**：推送到分支（`git push origin feature/xxx`）
-11. **PR**：在 GitHub 上打开 Pull Request（在 GitHub 网页上）并提供详细描述
+11. **PR**：在 GitHub 上打开 Merge Request（在 GitHub 网页上）并提供详细描述
 
 请确保测试通过并包含相关的文档更新。
 
@@ -274,7 +278,7 @@ MIT 许可证。详见 [LICENSE](LICENSE)。
 
 ## 🌟 项目支持
 
-非常欢迎通过提交 Pull Request 和报告问题来为此项目做出贡献。
+非常欢迎通过提交 Merge Request 和报告问题来为此项目做出贡献。
 
 **项目支持：**
 
@@ -283,7 +287,7 @@ MIT 许可证。详见 [LICENSE](LICENSE)。
 - 📝 **撰写博客**关于开发工具和工作流程 - 我们提供写作支持
 - 🌟 **加入生态** - 致力于支持开源和（golang）开发场景
 
-**使用这个包快乐编程！** 🎉
+**祝你用这个包编程愉快！** 🎉🎉🎉
 
 <!-- TEMPLATE (ZH) END: STANDARD PROJECT FOOTER -->
 

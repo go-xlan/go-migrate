@@ -11,6 +11,7 @@ import (
 	"github.com/go-xlan/go-migrate/newmigrate"
 	"github.com/go-xlan/go-migrate/newscripts"
 	"github.com/go-xlan/go-migrate/previewmigrate"
+	"github.com/golang-migrate/migrate/v4"
 	mysqlmigrate "github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/spf13/cobra"
 	"github.com/yyle88/must"
@@ -23,20 +24,31 @@ import (
 )
 
 func main() {
-	db := newGormDB(&MysqlConfig{
+	cfg := &MysqlConfig{
 		Dsn: "root:123456@tcp(localhost:3306)/xlan_migrate_demo1x?charset=utf8mb4&parseTime=true&multiStatements=true",
-	})
-	defer rese.F0(rese.P1(db.DB()).Close)
-
+	}
 	scriptsInRoot := runpath.PARENT.Join("scripts")
 
-	migration := rese.P1(newmigrate.NewWithScriptsAndDatabase(
-		&newmigrate.ScriptsAndDatabaseParam{
-			ScriptsInRoot:    scriptsInRoot,
-			DatabaseName:     "mysql",
-			DatabaseInstance: rese.V1(mysqlmigrate.WithInstance(rese.P1(db.DB()), &mysqlmigrate.Config{})),
-		},
-	))
+	// Lazy initialization: database connection created only when command runs
+	// 延迟初始化：仅在命令运行时才创建数据库连接
+	getDB := func() *gorm.DB {
+		db := newGormDB(cfg)
+		return db
+	}
+
+	// Migration factory accepts database connection to share single connection (avoiding duplicate connections)
+	// 迁移工厂接受数据库连接以共享单个连接（避免重复连接）
+	getMigration := func(db *gorm.DB) *migrate.Migrate {
+		sqlDB := rese.P1(db.DB())
+		migrationDriver := rese.V1(mysqlmigrate.WithInstance(sqlDB, &mysqlmigrate.Config{}))
+		return rese.P1(newmigrate.NewWithScriptsAndDatabase(
+			&newmigrate.ScriptsAndDatabaseParam{
+				ScriptsInRoot:    scriptsInRoot,
+				DatabaseName:     "mysql",
+				DatabaseInstance: migrationDriver,
+			},
+		))
+	}
 
 	var rootCmd = &cobra.Command{
 		Use:   "main",
@@ -44,16 +56,16 @@ func main() {
 		Long:  "main",
 	}
 	rootCmd.AddCommand(newscripts.NextScriptCmd(&newscripts.Config{
-		Migration: migration,
-		Options:   newscripts.NewOptions(scriptsInRoot),
-		DB:        db,
+		GetMigration: getMigration,
+		GetDB:        getDB,
+		Options:      newscripts.NewOptions(scriptsInRoot),
 		Objects: []any{
 			randomSample(&models.UserV1{}, &models.UserV2{}, &models.UserV3{}),
 			randomSample(&models.InfoV1{}, &models.InfoV2{}, &models.InfoV3{}),
 		},
 	}))
-	rootCmd.AddCommand(cobramigration.NewMigrateCmd(migration))
-	rootCmd.AddCommand(previewmigrate.NewPreviewCmd(migration, db, scriptsInRoot))
+	rootCmd.AddCommand(cobramigration.NewMigrateCmd(getDB, getMigration))
+	rootCmd.AddCommand(previewmigrate.NewPreviewCmd(getDB, getMigration, scriptsInRoot))
 
 	must.Done(rootCmd.Execute())
 }

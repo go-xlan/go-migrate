@@ -44,14 +44,14 @@ const (
 	onceMigrated enumMigrateState = "once-migrated" // Has migration history // 有迁移历史
 )
 
-// GetNextScriptInfo analyzes current migration state and determines next script information
+// GetNewScriptInfo analyzes current migration state and determines next script information
 // Examines existing migration files and database version to calculate appropriate next action
 // Returns script naming details and action type for migration script creation
 //
-// GetNextScriptInfo 分析当前迁移状态并确定下一个脚本信息
+// GetNewScriptInfo 分析当前迁移状态并确定下一个脚本信息
 // 检查现有迁移文件和数据库版本来计算适当的下一步操作
 // 返回用于迁移脚本创建的脚本命名详情和操作类型
-func GetNextScriptInfo(migration *migrate.Migrate, options *Options, naming *ScriptNaming) *NextScriptInfo {
+func GetNewScriptInfo(migration *migrate.Migrate, options *Options, naming *ScriptNaming) *NewScriptInfo {
 	var migrateState enumMigrateState
 	version, dirtyFlag, err := migration.Version()
 	if err != nil {
@@ -78,7 +78,7 @@ func GetNextScriptInfo(migration *migrate.Migrate, options *Options, naming *Scr
 	zaplog.SUG.Debugln("next-action:", nextAction)
 	zaplog.SUG.Debugln("script-name:", neatjsons.S(scriptNames))
 
-	return &NextScriptInfo{
+	return &NewScriptInfo{
 		Action:      nextAction,
 		ForwardName: scriptNames.ForwardName,
 		ReverseName: scriptNames.ReverseName,
@@ -135,7 +135,7 @@ func mustWriteScript(nextAction ScriptAction, shortName string, script string, o
 	zaplog.SUG.Debugln("done")
 }
 
-func checkScriptName(scriptNames *NextScriptNames, previousVersion uint) {
+func checkScriptName(scriptNames *NewScriptNames, previousVersion uint) {
 	zaplog.LOG.Debug("check", zap.String("forward_name", scriptNames.ForwardName))
 	mig1 := rese.P1(source.DefaultParse(must.Nice(scriptNames.ForwardName)))
 	mustnum.Gt(mig1.Version, previousVersion)
@@ -146,13 +146,13 @@ func checkScriptName(scriptNames *NextScriptNames, previousVersion uint) {
 	must.Same(mig1.Version, mig2.Version)
 }
 
-type NextScriptNames struct {
+type NewScriptNames struct {
 	ForwardName string
 	ReverseName string
 }
 
-func obtainScriptNames(nextVersion uint, nextAction ScriptAction, options *Options, migrations *source.Migrations, naming *ScriptNaming) *NextScriptNames {
-	var scriptNames = &NextScriptNames{}
+func obtainScriptNames(nextVersion uint, nextAction ScriptAction, options *Options, migrations *source.Migrations, naming *ScriptNaming) *NewScriptNames {
+	var scriptNames = &NewScriptNames{}
 	switch nextAction {
 	case CreateScript:
 		prefix := naming.NewScriptPrefix(nextVersion)

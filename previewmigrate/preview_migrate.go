@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/go-xlan/go-migrate/internal/utils"
+	"github.com/go-xlan/go-migrate/newmigrate"
 	"github.com/go-xlan/go-migrate/newscripts"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/spf13/cobra"
@@ -27,20 +28,20 @@ import (
 )
 
 // NewPreviewCmd creates preview command for migration dry-run with subcommands
-// Uses lazy initialization - connections created only when command runs (not during command tree building)
-// Migration factory accepts database connection parameter to share single connection (avoiding duplicate connections)
+// Uses MigrationParam interface for unified connection management and resource cleanup
+// Ensures proper resource release after preview operations complete
 //
 // NewPreviewCmd 创建具有子命令的迁移试运行预览命令
-// 使用延迟初始化 - 仅在命令运行时创建连接（而非命令树构建时）
-// 迁移工厂接受数据库连接参数以共享单个连接（避免重复连接）
-func NewPreviewCmd(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrate.Migrate, scriptsPath string) *cobra.Command {
+// 使用 MigrationParam 接口统一管理连接和资源清理
+// 确保预览操作完成后正确释放资源
+func NewPreviewCmd(param *newmigrate.MigrationParam, scriptsPath string) *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:   "preview",
 		Short: "Preview migrations (dry-run)",
 		Long:  "Test migration SQL without applying changes",
 	}
 
-	rootCmd.AddCommand(newPreviewIncCmd(getDB, getMigration, scriptsPath))
+	rootCmd.AddCommand(newPreviewIncCmd(param, scriptsPath))
 	return rootCmd
 }
 
@@ -49,14 +50,17 @@ func NewPreviewCmd(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrate.M
 //
 // newPreviewIncCmd 创建用于预览下一个迁移步骤的命令
 // 在事务中测试下一个迁移 SQL 而不对数据库应用更改
-func newPreviewIncCmd(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrate.Migrate, scriptsPath string) *cobra.Command {
+func newPreviewIncCmd(param *newmigrate.MigrationParam, scriptsPath string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "inc",
 		Short: "Preview next migration step (+1)",
 		Long:  "Test next migration SQL without applying changes",
 		Run: func(cmd *cobra.Command, args []string) {
-			db := getDB()
-			migration := getMigration(db)
+			migration, cleanup := param.GetMigration()
+			defer cleanup()
+
+			db, cleanup2 := param.GetDB()
+			defer cleanup2()
 			err := previewNextMigration(migration, db, scriptsPath)
 			if err != nil {
 				zaplog.SUG.Debugln(eroticgo.RED.Sprint("PREVIEW FAILED:"))
@@ -68,11 +72,11 @@ func newPreviewIncCmd(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrat
 }
 
 // previewNextMigration previews the next migration without applying it
-// Uses existing GetNextScriptInfo to find next script and tests execution in rollback transaction
+// Uses existing GetNewScriptInfo to find next script and tests execution in rollback transaction
 // Provides comprehensive feedback on SQL validity and execution safety
 //
 // previewNextMigration 预览下一个迁移而不应用它
-// 使用现有的 GetNextScriptInfo 找到下一个脚本并在回滚事务中测试执行
+// 使用现有的 GetNewScriptInfo 找到下一个脚本并在回滚事务中测试执行
 // 提供关于 SQL 有效性和执行安全性的全面反馈
 func previewNextMigration(migration *migrate.Migrate, db *gorm.DB, scriptsPath string) error {
 	// 1. Get current version
@@ -82,10 +86,10 @@ func previewNextMigration(migration *migrate.Migrate, db *gorm.DB, scriptsPath s
 		return erero.Errorf("DATABASE IS DIRTY AT VERSION %d", currentVersion)
 	}
 
-	// 2. Use existing GetNextScriptInfo to find next script
+	// 2. Use existing GetNewScriptInfo to find next script
 	options := newscripts.NewOptions(scriptsPath)
 	scriptNaming := newscripts.NewScriptNaming()
-	scriptInfo := newscripts.GetNextScriptInfo(migration, options, scriptNaming)
+	scriptInfo := newscripts.GetNewScriptInfo(migration, options, scriptNaming)
 
 	scriptNames := scriptInfo.GetScriptNames()
 

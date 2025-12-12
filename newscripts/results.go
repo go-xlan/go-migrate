@@ -19,14 +19,14 @@ const (
 	UpdateScript ScriptAction = "update-script" // Update existing scripts // 更新现有脚本
 )
 
-// NextScriptInfo contains information about the next migration script to be generated
+// NewScriptInfo contains information about the next migration script to be generated
 // Includes action type and both forward and reverse script filenames
 // Used to coordinate script creation and updates
 //
-// NextScriptInfo 包含将要生成的下一个迁移脚本的信息
+// NewScriptInfo 包含将要生成的下一个迁移脚本的信息
 // 包含操作类型和正向、反向脚本文件名
 // 用于协调脚本创建和更新
-type NextScriptInfo struct {
+type NewScriptInfo struct {
 	Action      ScriptAction // Type of script action to perform // 要执行的脚本操作类型
 	ForwardName string       // Filename for forward migration script // 正向迁移脚本的文件名
 	ReverseName string       // Filename for reverse migration script // 反向迁移脚本的文件名
@@ -39,7 +39,7 @@ type NextScriptInfo struct {
 // WriteScripts 生成并将正向和反向迁移脚本写入文件系统
 // 从迁移操作创建脚本内容并处理文件写入
 // 基于脚本操作支持创建和更新场景
-func (scriptInfo *NextScriptInfo) WriteScripts(migrationOps checkmigration.MigrationOps, options *Options) {
+func (scriptInfo *NewScriptInfo) WriteScripts(migrationOps checkmigration.MigrationOps, options *Options) {
 	forwardScript := migrationOps.GetForwardScript()
 	mustWriteScript(scriptInfo.Action, scriptInfo.ForwardName, forwardScript, options)
 
@@ -54,7 +54,7 @@ func (scriptInfo *NextScriptInfo) WriteScripts(migrationOps checkmigration.Migra
 // ScriptExists 检查迁移脚本文件是否已存在于目标 DIR 中
 // 验证正向和反向脚本文件的存在性
 // 如果找到任何脚本文件则返回 true
-func (scriptInfo *NextScriptInfo) ScriptExists(options *Options) bool {
+func (scriptInfo *NewScriptInfo) ScriptExists(options *Options) bool {
 	if osmustexist.IsFile(filepath.Join(options.ScriptsInRoot, scriptInfo.ForwardName)) {
 		return true
 	}
@@ -64,8 +64,8 @@ func (scriptInfo *NextScriptInfo) ScriptExists(options *Options) bool {
 	return false
 }
 
-func (scriptInfo *NextScriptInfo) GetScriptNames() *NextScriptNames {
-	return &NextScriptNames{
+func (scriptInfo *NewScriptInfo) GetScriptNames() *NewScriptNames {
+	return &NewScriptNames{
 		ForwardName: scriptInfo.ForwardName,
 		ReverseName: scriptInfo.ReverseName,
 	}

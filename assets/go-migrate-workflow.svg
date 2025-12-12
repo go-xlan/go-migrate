@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="500" height="650" viewBox="0 0 500 650"
+     xmlns="http://www.w3.org/2000/svg">
+
+    <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="8"
+                refX="3" refY="4" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,8 L8,4 z" fill="#4a90e2"/>
+        </marker>
+        <marker id="arrow-down" markerWidth="8" markerHeight="8"
+                refX="4" refY="7" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L8,0 L4,8 z" fill="#4a90e2"/>
+        </marker>
+        <marker id="arrow-green" markerWidth="8" markerHeight="8"
+                refX="4" refY="7" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L8,0 L4,8 z" fill="#27ae60"/>
+        </marker>
+    </defs>
+
+    <style>
+        .title {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            fill: #222;
+        }
+        .box-label {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            fill: #333;
+        }
+        .box-desc {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+            font-size: 10px;
+            fill: #666;
+        }
+        .pkg-name {
+            font-family: "SF Mono", Consolas, monospace;
+            font-size: 11px;
+            fill: #4a90e2;
+            font-weight: 500;
+        }
+        .cmd-name {
+            font-family: "SF Mono", Consolas, monospace;
+            font-size: 10px;
+            fill: #27ae60;
+        }
+    </style>
+
+    <!-- Background -->
+    <rect x="0" y="0" width="500" height="650" fill="#fafafa"/>
+
+    <!-- Title -->
+    <text x="250" y="30" text-anchor="middle" class="title">go-migrate Architecture</text>
+
+    <!-- Step 1: GORM Models -->
+    <g transform="translate(150,50)">
+        <rect width="200" height="55" fill="#fff" stroke="#27ae60" stroke-width="2" rx="6">
+            <animate attributeName="stroke-width" values="2;2.5;2" dur="2s" repeatCount="indefinite"/>
+        </rect>
+        <text x="100" y="25" text-anchor="middle" class="box-label">GORM Models</text>
+        <text x="100" y="43" text-anchor="middle" class="box-desc">Define structs with gorm tags</text>
+    </g>
+
+    <!-- Arrow 1 -->
+    <line x1="250" y1="105" x2="250" y2="130" stroke="#4a90e2" stroke-width="2" marker-end="url(#arrow-down)"/>
+
+    <!-- Step 2: Compare Schema -->
+    <g transform="translate(150,135)">
+        <rect width="200" height="55" fill="#fff" stroke="#4a90e2" stroke-width="2" rx="6">
+            <animate attributeName="stroke-width" values="2;2.5;2" dur="2.2s" repeatCount="indefinite"/>
+        </rect>
+        <text x="100" y="25" text-anchor="middle" class="box-label">Compare Schema</text>
+        <text x="100" y="43" text-anchor="middle" class="box-desc">DryRun mode captures SQL differences</text>
+    </g>
+    <!-- Package -->
+    <g transform="translate(370,145)">
+        <rect width="110" height="35" fill="#e8f4fc" stroke="#4a90e2" stroke-width="1" rx="4"/>
+        <text x="55" y="22" text-anchor="middle" class="pkg-name">checkmigration</text>
+    </g>
+
+    <!-- Arrow 2 -->
+    <line x1="250" y1="190" x2="250" y2="215" stroke="#4a90e2" stroke-width="2" marker-end="url(#arrow-down)"/>
+
+    <!-- Step 3: Generate Scripts -->
+    <g transform="translate(150,220)">
+        <rect width="200" height="55" fill="#fff" stroke="#e67e22" stroke-width="2" rx="6">
+            <animate attributeName="stroke-width" values="2;2.5;2" dur="2.4s" repeatCount="indefinite"/>
+        </rect>
+        <text x="100" y="25" text-anchor="middle" class="box-label">Generate Scripts</text>
+        <text x="100" y="43" text-anchor="middle" class="box-desc">000001_xxx.up.sql / .down.sql</text>
+    </g>
+    <!-- Package -->
+    <g transform="translate(370,230)">
+        <rect width="110" height="35" fill="#fef5e7" stroke="#e67e22" stroke-width="1" rx="4"/>
+        <text x="55" y="22" text-anchor="middle" class="pkg-name">newscripts</text>
+    </g>
+
+    <!-- Arrow 3 -->
+    <line x1="250" y1="275" x2="250" y2="300" stroke="#4a90e2" stroke-width="2" marker-end="url(#arrow-down)"/>
+
+    <!-- Step 4: Preview (optional) -->
+    <g transform="translate(150,305)">
+        <rect width="200" height="55" fill="#fff" stroke="#9b59b6" stroke-width="2" rx="6" stroke-dasharray="4,2">
+            <animate attributeName="stroke-width" values="2;2.5;2" dur="2.5s" repeatCount="indefinite"/>
+        </rect>
+        <text x="100" y="25" text-anchor="middle" class="box-label">Preview (optional)</text>
+        <text x="100" y="43" text-anchor="middle" class="box-desc">Check before execution</text>
+    </g>
+    <!-- Package -->
+    <g transform="translate(370,315)">
+        <rect width="110" height="35" fill="#f5eef8" stroke="#9b59b6" stroke-width="1" rx="4"/>
+        <text x="55" y="22" text-anchor="middle" class="pkg-name">previewmigrate</text>
+    </g>
+
+    <!-- Arrow 4 -->
+    <line x1="250" y1="360" x2="250" y2="385" stroke="#4a90e2" stroke-width="2" marker-end="url(#arrow-down)"/>
+
+    <!-- Step 5: Execute Migration -->
+    <g transform="translate(150,390)">
+        <rect width="200" height="55" fill="#fff" stroke="#27ae60" stroke-width="2" rx="6">
+            <animate attributeName="stroke-width" values="2;2.5;2" dur="2.6s" repeatCount="indefinite"/>
+        </rect>
+        <text x="100" y="25" text-anchor="middle" class="box-label">Execute Migration</text>
+        <text x="100" y="43" text-anchor="middle" class="box-desc">up / down / force via golang-migrate</text>
+    </g>
+    <!-- Package -->
+    <g transform="translate(370,400)">
+        <rect width="110" height="35" fill="#e8f8f0" stroke="#27ae60" stroke-width="1" rx="4"/>
+        <text x="55" y="22" text-anchor="middle" class="pkg-name">cobramigration</text>
+    </g>
+
+    <!-- Arrow 5 -->
+    <line x1="250" y1="445" x2="250" y2="470" stroke="#27ae60" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+    <!-- Step 6: Database -->
+    <g transform="translate(185,480)">
+        <ellipse cx="65" cy="15" rx="55" ry="14" fill="#fff" stroke="#7f8c8d" stroke-width="1.5"/>
+        <rect x="10" y="15" width="110" height="45" fill="#fff" stroke="#7f8c8d" stroke-width="1.5"/>
+        <ellipse cx="65" cy="60" rx="55" ry="14" fill="#fff" stroke="#7f8c8d" stroke-width="1.5"/>
+        <line x1="10" y1="15" x2="10" y2="60" stroke="#7f8c8d" stroke-width="1.5"/>
+        <line x1="120" y1="15" x2="120" y2="60" stroke="#7f8c8d" stroke-width="1.5"/>
+        <text x="65" y="42" text-anchor="middle" class="box-label">Database</text>
+    </g>
+
+    <!-- Status box (side) -->
+    <g transform="translate(20,400)">
+        <rect width="110" height="35" fill="#f0f0f0" stroke="#999" stroke-width="1" rx="4"/>
+        <text x="55" y="22" text-anchor="middle" class="pkg-name">migrationstate</text>
+    </g>
+    <text x="75" y="450" text-anchor="middle" class="cmd-name">$ status</text>
+
+    <!-- Commands -->
+    <g transform="translate(150,570)">
+        <rect width="200" height="60" fill="#fff" stroke="#ddd" stroke-width="1" rx="4"/>
+        <text x="100" y="18" text-anchor="middle" class="box-desc">CLI Commands</text>
+        <text x="30" y="38" class="cmd-name">$ new-script</text>
+        <text x="120" y="38" class="cmd-name">$ preview inc</text>
+        <text x="30" y="52" class="cmd-name">$ migrate inc</text>
+        <text x="120" y="52" class="cmd-name">$ migrate all</text>
+    </g>
+
+    <!-- Flow animation -->
+    <circle r="5" fill="#4a90e2" opacity="0.8">
+        <animate attributeName="cy" values="50;105;135;190;220;275;305;360;390;445;480;555" dur="5s" repeatCount="indefinite"/>
+        <animate attributeName="cx" values="250;250;250;250;250;250;250;250;250;250;250;250" dur="5s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;1;1;1;1;1;1;1;1;1;0" dur="5s" repeatCount="indefinite"/>
+    </circle>
+
+</svg>

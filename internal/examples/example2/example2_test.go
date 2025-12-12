@@ -47,7 +47,7 @@ func TestGenerateNewScript(t *testing.T) {
 	require.False(t, options.SurveyWritten)
 	require.Equal(t, scriptsInRoot, options.ScriptsInRoot)
 
-	scriptInfo := newscripts.GetNextScriptInfo(migration, options, newscripts.NewScriptNaming())
+	scriptInfo := newscripts.GetNewScriptInfo(migration, options, newscripts.NewScriptNaming())
 	t.Log(neatjsons.S(scriptInfo))
 	require.Equal(t, newscripts.UpdateScript, scriptInfo.Action)
 	require.Equal(t, "00001_script.up.sql", scriptInfo.ForwardName)
@@ -91,7 +91,7 @@ func TestGenerateNewScript_2(t *testing.T) {
 	require.True(t, t.Run("update-00002", func(t *testing.T) {
 		options := newscripts.NewOptions(scriptsInRoot)
 		options.DryRun = true
-		scriptInfo := newscripts.GetNextScriptInfo(migration, options, newscripts.NewScriptNaming())
+		scriptInfo := newscripts.GetNewScriptInfo(migration, options, newscripts.NewScriptNaming())
 		require.Equal(t, newscripts.UpdateScript, scriptInfo.Action)
 		require.Equal(t, "00002_script.up.sql", scriptInfo.ForwardName)
 		require.Equal(t, "00002_script.down.sql", scriptInfo.ReverseName)
@@ -107,7 +107,7 @@ func TestGenerateNewScript_2(t *testing.T) {
 	require.True(t, t.Run("create-00003", func(t *testing.T) {
 		options := newscripts.NewOptions(scriptsInRoot)
 		options.DryRun = true
-		scriptInfo := newscripts.GetNextScriptInfo(migration, options, newscripts.NewScriptNaming())
+		scriptInfo := newscripts.GetNewScriptInfo(migration, options, newscripts.NewScriptNaming())
 		require.Equal(t, newscripts.CreateScript, scriptInfo.Action)
 		require.Equal(t, "00003_script.up.sql", scriptInfo.ForwardName)
 		require.Equal(t, "00003_script.down.sql", scriptInfo.ReverseName)
@@ -143,7 +143,7 @@ func TestGenerateNewScript_3(t *testing.T) {
 	must.Done(migration.Steps(+1))
 
 	options := newscripts.NewOptions(scriptsInRoot)
-	scriptInfo := newscripts.GetNextScriptInfo(migration, options, newscripts.NewScriptNaming())
+	scriptInfo := newscripts.GetNewScriptInfo(migration, options, newscripts.NewScriptNaming())
 	require.Equal(t, newscripts.UpdateScript, scriptInfo.Action)
 	require.Equal(t, "00002_script.up.sql", scriptInfo.ForwardName)
 	require.Equal(t, "00002_script.down.sql", scriptInfo.ReverseName)

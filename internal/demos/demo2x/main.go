@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-xlan/go-migrate/cobramigration"
 	"github.com/go-xlan/go-migrate/internal/demos/demo2x/internal/models"
+	"github.com/go-xlan/go-migrate/migrationstate"
 	"github.com/go-xlan/go-migrate/newmigrate"
 	"github.com/go-xlan/go-migrate/newscripts"
 	"github.com/go-xlan/go-migrate/previewmigrate"
@@ -30,43 +31,50 @@ func main() {
 	}
 	scriptsInRoot := runpath.PARENT.Join("scripts")
 
-	// Lazy initialization: database connection created only when command runs
-	// 延迟初始化：仅在命令运行时才创建数据库连接
-	getDB := func() *gorm.DB {
-		db := newGormDB(cfg)
-		return db
-	}
-
-	// Migration factory accepts database connection to share single connection (avoiding duplicate connections)
-	// 迁移工厂接受数据库连接以共享单个连接（避免重复连接）
-	getMigration := func(db *gorm.DB) *migrate.Migrate {
-		sqlDB := rese.P1(db.DB())
-		migrationDriver := rese.V1(postgresmigrate.WithInstance(sqlDB, &postgresmigrate.Config{}))
-		return rese.P1(newmigrate.NewWithScriptsAndDatabase(
-			&newmigrate.ScriptsAndDatabaseParam{
-				ScriptsInRoot:    scriptsInRoot,
-				DatabaseName:     "postgres",
-				DatabaseInstance: migrationDriver,
-			},
-		))
-	}
+	// Migration connection with lazy initialization and unified resource management
+	// 迁移连接，支持延迟初始化和统一资源管理
+	param := newmigrate.NewMigrationParam(
+		func() *gorm.DB {
+			return newGormDB(cfg)
+		},
+		func(db *gorm.DB) *migrate.Migrate {
+			sqlDB := rese.P1(db.DB())
+			migrationDriver := rese.V1(postgresmigrate.WithInstance(sqlDB, &postgresmigrate.Config{}))
+			return rese.P1(newmigrate.NewWithScriptsAndDatabase(
+				&newmigrate.ScriptsAndDatabaseParam{
+					ScriptsInRoot:    scriptsInRoot,
+					DatabaseName:     "postgres",
+					DatabaseInstance: migrationDriver,
+				},
+			))
+		},
+	)
 
 	var rootCmd = &cobra.Command{
 		Use:   "main",
 		Short: "main",
 		Long:  "main",
 	}
-	rootCmd.AddCommand(newscripts.NextScriptCmd(&newscripts.Config{
-		GetMigration: getMigration,
-		GetDB:        getDB,
-		Options:      newscripts.NewOptions(scriptsInRoot),
-		Objects: []any{
-			randomSample(&models.UserV1{}, &models.UserV2{}, &models.UserV3{}),
-			randomSample(&models.InfoV1{}, &models.InfoV2{}, &models.InfoV3{}),
-		},
+
+	// Random version objects to simulate different development stages
+	// 随机版本对象，模拟不同开发阶段的迁移场景
+	objects := []any{
+		randomSample(&models.UserV1{}, &models.UserV2{}, &models.UserV3{}),
+		randomSample(&models.InfoV1{}, &models.InfoV2{}, &models.InfoV3{}),
+	}
+
+	rootCmd.AddCommand(newscripts.NewScriptCmd(&newscripts.Config{
+		Param:   param,
+		Options: newscripts.NewOptions(scriptsInRoot),
+		Objects: objects,
 	}))
-	rootCmd.AddCommand(cobramigration.NewMigrateCmd(getDB, getMigration))
-	rootCmd.AddCommand(previewmigrate.NewPreviewCmd(getDB, getMigration, scriptsInRoot))
+	rootCmd.AddCommand(cobramigration.NewMigrateCmd(param))
+	rootCmd.AddCommand(previewmigrate.NewPreviewCmd(param, scriptsInRoot))
+	rootCmd.AddCommand(migrationstate.NewStatusCmd(&migrationstate.Config{
+		Param:       param,
+		ScriptsPath: scriptsInRoot,
+		Objects:     objects,
+	}))
 
 	must.Done(rootCmd.Execute())
 }

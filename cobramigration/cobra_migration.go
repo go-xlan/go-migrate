@@ -11,28 +11,28 @@ package cobramigration
 
 import (
 	"github.com/go-xlan/go-migrate/internal/utils"
-	"github.com/golang-migrate/migrate/v4"
+	"github.com/go-xlan/go-migrate/newmigrate"
 	"github.com/spf13/cobra"
 	"github.com/yyle88/eroticgo"
-	"gorm.io/gorm"
 )
 
 // NewMigrateCmd creates comprehensive migration command with subcommands for all migration operations
 // Uses lazy initialization - connections created only when command runs (not during command tree building)
-// Migration factory accepts database connection parameter to share single connection (avoiding duplicate connections)
+// Migration connection interface ensures proper resource cleanup after operations
 //
 // NewMigrateCmd 创建包含子命令的综合迁移命令，用于所有迁移操作
 // 使用延迟初始化 - 仅在命令运行时创建连接（而非命令树构建时）
-// 迁移工厂接受数据库连接参数以共享单个连接（避免重复连接）
-func NewMigrateCmd(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrate.Migrate) *cobra.Command {
+// 迁移连接接口确保操作后正确清理资源
+func NewMigrateCmd(param *newmigrate.MigrationParam) *cobra.Command {
 	// Create root command
 	var rootCmd = &cobra.Command{
 		Use:   "migrate",
 		Short: "Database migration",
 		Long:  "Database migration",
 		Run: func(cmd *cobra.Command, args []string) {
-			db := getDB()
-			migration := getMigration(db)
+			migration, cleanup := param.GetMigration()
+			defer cleanup()
+
 			version, dirtyFlag, err := migration.Version()
 			utils.WhistleCause(err) //panic when cause is not expected
 			if dirtyFlag {
@@ -43,9 +43,9 @@ func NewMigrateCmd(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrate.M
 		},
 	}
 
-	rootCmd.AddCommand(newAllCmd(getDB, getMigration)) // Add `all` command
-	rootCmd.AddCommand(newIncCMD(getDB, getMigration)) // Add `inc` command
-	rootCmd.AddCommand(newDecCMD(getDB, getMigration)) // Add `dec` command
+	rootCmd.AddCommand(newAllCmd(param)) // Add `all` command
+	rootCmd.AddCommand(newIncCMD(param)) // Add `inc` command
+	rootCmd.AddCommand(newDecCMD(param)) // Add `dec` command
 
 	return rootCmd
 }
@@ -55,13 +55,14 @@ func NewMigrateCmd(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrate.M
 //
 // newAllCmd 创建用于执行所有待处理迁移的命令
 // 将数据库升级到最新的结构版本
-func newAllCmd(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrate.Migrate) *cobra.Command {
+func newAllCmd(param *newmigrate.MigrationParam) *cobra.Command {
 	return &cobra.Command{
 		Use:   "all",
 		Short: "Run all migration files",
 		Run: func(cmd *cobra.Command, args []string) {
-			db := getDB()
-			migration := getMigration(db)
+			migration, cleanup := param.GetMigration()
+			defer cleanup()
+
 			// Perform complete database upgrade
 			// 执行完整的数据库升级
 			utils.WhistleCause(migration.Up())
@@ -74,13 +75,14 @@ func newAllCmd(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrate.Migra
 //
 // newDecCMD 创建用于回滚一个迁移步骤的命令
 // 安全地将数据库结构回退一个版本
-func newDecCMD(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrate.Migrate) *cobra.Command {
+func newDecCMD(param *newmigrate.MigrationParam) *cobra.Command {
 	return &cobra.Command{
 		Use:   "dec",
 		Short: "Rollback one step (-1)",
 		Run: func(cmd *cobra.Command, args []string) {
-			db := getDB()
-			migration := getMigration(db)
+			migration, cleanup := param.GetMigration()
+			defer cleanup()
+
 			// Rollback database by one migration step
 			// 将数据库回滚一个迁移步骤
 			utils.WhistleCause(migration.Steps(-1))
@@ -93,13 +95,14 @@ func newDecCMD(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrate.Migra
 //
 // newIncCMD 创建用于执行下一个迁移步骤的命令
 // 将数据库结构向前推进一个版本
-func newIncCMD(getDB func() *gorm.DB, getMigration func(*gorm.DB) *migrate.Migrate) *cobra.Command {
+func newIncCMD(param *newmigrate.MigrationParam) *cobra.Command {
 	return &cobra.Command{
 		Use:   "inc",
 		Short: "Run next step (+1)",
 		Run: func(cmd *cobra.Command, args []string) {
-			db := getDB()
-			migration := getMigration(db)
+			migration, cleanup := param.GetMigration()
+			defer cleanup()
+
 			// Execute next migration step forward
 			// 向前执行下一个迁移步骤
 			utils.WhistleCause(migration.Steps(+1))

@@ -1,166 +1,178 @@
+[![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/go-xlan/go-migrate/release.yml?branch=main&label=BUILD)](https://github.com/go-xlan/go-migrate/actions/workflows/release.yml?query=branch%3Amain)
+[![GoDoc](https://pkg.go.dev/badge/github.com/go-xlan/go-migrate)](https://pkg.go.dev/github.com/go-xlan/go-migrate)
+[![Coverage Status](https://img.shields.io/coveralls/github/go-xlan/go-migrate/main.svg)](https://coveralls.io/github/go-xlan/go-migrate?branch=main)
+[![Supported Go Versions](https://img.shields.io/badge/Go-1.24+-lightgrey.svg)](https://go.dev/)
+[![GitHub Release](https://img.shields.io/github/release/go-xlan/go-migrate.svg)](https://github.com/go-xlan/go-migrate/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/go-xlan/go-migrate)](https://goreportcard.com/report/github.com/go-xlan/go-migrate)
+
 # go-migrate
 
 Intelligent database migration toolkit with GORM model integration and automated script generation.
 
+## Ecosystem
+
+![go-migrate overview](assets/go-migrate-overview.svg)
+
+![go-migrate workflow](assets/go-migrate-workflow.svg)
+
 <!-- TEMPLATE (EN) BEGIN: LANGUAGE NAVIGATION -->
+
 ## CHINESE README
 
 [中文说明](README.zh.md)
 <!-- TEMPLATE (EN) END: LANGUAGE NAVIGATION -->
 
-## ✨ Features
+## Features
 
-- 🔍 **Smart Schema Analysis**: Auto-compare GORM models with actual database schemas
-- 📝 **Automated Script Generation**: Create migration scripts with intelligent version management  
-- 🔄 **Flexible Migration Strategies**: Support file-based, embedded, and database-driven approaches
-- 🎯 **Comprehensive CLI**: User-friendly Cobra commands for all migration operations
-- 🛡️ **Safe Operations**: DryRun mode and interactive confirmation for secure migrations
-- 🔍 **Migration Preview**: Zero-cost error recovery with transaction rollback testing
-- 🔗 **Multi-Database Support**: Works with MySQL, PostgreSQL, SQLite through golang-migrate
+- **Smart Schema Analysis**: Auto-compare GORM models with existing database schemas
+- **Automated Script Generation**: Create migration scripts with intelligent version management
+- **Safe Operations**: DryRun mode and preview to ensure secure migrations
+- **Multi-Database Support**: Works with MySQL, PostgreSQL, SQLite through golang-migrate
+- **Comprehensive CLI**: Intuitive Cobra commands covering all migration operations
+- **Status Inspection**: Check database version, pending migrations and schema differences
 
-## 📦 Installation
+## Core Packages
+
+| Package | Purpose |
+|---------|---------|
+| `checkmigration` | Compare GORM models with database, capture SQL differences |
+| `newmigrate` | Create golang-migrate instance |
+| `newscripts` | Generate next version migration scripts |
+| `cobramigration` | Cobra CLI commands (up/down/force) |
+| `previewmigrate` | Preview migrations before execution |
+| `migrationstate` | Check migration status |
+
+## Installation
 
 ```bash
 go get github.com/go-xlan/go-migrate
 ```
 
-### Prerequisites
-- Go 1.22.8 or later
-- Database driver for your target database
-- GORM v2 for model definitions
+## Quick Start
 
-## 🚀 Quick Start
-
-### Basic Usage
+### 1. Define GORM Models
 
 ```go
-package main
-
-import (
-    "github.com/go-xlan/go-migrate/checkmigration"
-    "github.com/go-xlan/go-migrate/newmigrate"
-    "github.com/yyle88/must"
-    "gorm.io/gorm"
-)
-
-func main() {
-    // Initialize GORM database connection
-    db := setupDatabase() // Your database setup
-    
-    // Check what migrations are needed
-    migrateSQLs := checkmigration.CheckMigrate(db, []any{&User{}, &Product{}})
-    
-    // Create migration instance
-    migration := must.Nice(newmigrate.NewWithScriptsAndDatabase(&newmigrate.ScriptsAndDatabaseParam{
-        ScriptsInRoot:    "./migrations",
-        DatabaseName:     "mysql",
-        DatabaseInstance: databaseDriver, // Your database driver instance
-    }))
-    
-    // Execute migrations
-    must.Done(migration.Up())
+type User struct {
+    ID   uint   `gorm:"primarykey"`
+    Name string `gorm:"size:100"`
+    Age  int
 }
 ```
 
-### CLI Integration
+### 2. Setup CLI Tool
 
 ```go
 package main
 
 import (
     "github.com/go-xlan/go-migrate/cobramigration"
-    "github.com/go-xlan/go-migrate/previewmigrate"
+    "github.com/go-xlan/go-migrate/migrationstate"
+    "github.com/go-xlan/go-migrate/newmigrate"
     "github.com/go-xlan/go-migrate/newscripts"
+    "github.com/go-xlan/go-migrate/previewmigrate"
+    "github.com/golang-migrate/migrate/v4"
+    mysqlmigrate "github.com/golang-migrate/migrate/v4/database/mysql"
     "github.com/spf13/cobra"
     "github.com/yyle88/must"
+    "github.com/yyle88/rese"
+    "gorm.io/gorm"
 )
 
 func main() {
-    // Define functions for on-demand initialization
-    getDB := func() *gorm.DB {
-        return setupDatabase()
-    }
-    getMigration := func(db *gorm.DB) *migrate.Migrate {
-        return setupMigration(db)
+    scriptsPath := "./scripts"
+
+    // MigrationParam with lazy initialization and unified resource management
+    param := newmigrate.NewMigrationParam(
+        func() *gorm.DB {
+            return setupYourDatabase() // Your GORM setup
+        },
+        func(db *gorm.DB) *migrate.Migrate {
+            sqlDB := rese.P1(db.DB())
+            driver := rese.V1(mysqlmigrate.WithInstance(sqlDB, &mysqlmigrate.Config{}))
+            return rese.P1(newmigrate.NewWithScriptsAndDatabase(&newmigrate.ScriptsAndDatabaseParam{
+                ScriptsInRoot:    scriptsPath,
+                DatabaseName:     "mysql",
+                DatabaseInstance: driver,
+            }))
+        },
+    )
+
+    objects := []any{
+        &User{},
+        &Product{},
+        &Cart{},
     }
 
-    var rootCmd = &cobra.Command{Use: "app"}
-
-    // Add migration commands
-    rootCmd.AddCommand(cobramigration.NewMigrateCmd(getDB, getMigration))
-    rootCmd.AddCommand(previewmigrate.NewPreviewCmd(getDB, getMigration, "./scripts"))
-    rootCmd.AddCommand(newscripts.NextScriptCmd(&newscripts.Config{
-        GetMigration: getMigration,
-        GetDB:        getDB,
-        Options:      newscripts.NewOptions("./scripts"),
-        Objects:      []any{&User{}, &Product{}},
+    rootCmd := &cobra.Command{Use: "app"}
+    rootCmd.AddCommand(newscripts.NewScriptCmd(&newscripts.Config{
+        Param:   param,
+        Options: newscripts.NewOptions(scriptsPath),
+        Objects: objects,
+    }))
+    rootCmd.AddCommand(cobramigration.NewMigrateCmd(param))
+    rootCmd.AddCommand(previewmigrate.NewPreviewCmd(param, scriptsPath))
+    rootCmd.AddCommand(migrationstate.NewStatusCmd(&migrationstate.Config{
+        Param:       param,
+        ScriptsPath: scriptsPath,
+        Objects:     objects,
     }))
 
     must.Done(rootCmd.Execute())
 }
 ```
 
-## 📋 Core API Reference
+### 3. Common Workflow
 
-### Migration Analysis
-- `checkmigration.CheckMigrate(db, models)` - Compare schemas and return needed SQL
-- `checkmigration.GetMigrateOps(db, models)` - Get detailed migration operations
+```bash
+# Step 1: Check current status
+go run main.go status
 
-### Migration Creation
-- `newmigrate.NewWithScriptsAndDBSource[T](param)` - Create with connection string
-- `newmigrate.NewWithScriptsAndDatabase(param)` - Create with driver instance
-- `newmigrate.NewWithEmbedFsAndDatabase(param)` - Create with embedded files
+# Step 2: Update GORM model (add field, change type, etc.)
 
-### Script Management
-- `newscripts.GetNextScriptInfo(migration, options, naming)` - Analyze next script requirements
-- `newscripts.NextScriptCmd(config)` - CLI command for script generation
+# Step 3: Generate migration script
+go run main.go new-script
+# Creates: scripts/000001_xxx.up.sql and scripts/000001_xxx.down.sql
 
-### CLI Commands
-- `migrate` - Display current migration status
-- `migrate all` - Execute all pending migrations
-- `migrate inc` - Run next migration step
-- `migrate dec` - Rollback one migration step
-- `preview inc` - Preview next migration without changes
+# Step 4: Preview pending execution
+go run main.go preview inc
 
-## 📁 Project Structure
-
-```
-go-migrate/
-├── checkmigration/     # Schema analysis and SQL generation
-├── newmigrate/         # Migration instance factory
-├── newscripts/         # Script generation and management  
-├── cobramigration/     # Cobra CLI integration
-├── previewmigrate/     # Migration preview and testing
-└── internal/           # Demos, examples, and utilities
-    ├── demos/          # Complete demo applications
-    ├── examples/       # Usage examples
-    └── sketches/       # Development sketches
+# Step 5: Execute migration
+go run main.go migrate inc    # One step
+go run main.go migrate all    # All pending
 ```
 
-## 🔧 Configuration Examples
+## CLI Commands
 
-### Database Setup
+| Command | Description |
+|---------|-------------|
+| `status` | Show database version, pending migrations, schema diff |
+| `new-script` | Generate migration scripts from model changes |
+| `preview inc` | Preview next migration without executing |
+| `migrate inc` | Execute next migration |
+| `migrate dec` | Rollback one migration |
+| `migrate all` | Execute all pending migrations |
+| `migrate force N` | Force set version to N |
+
+## Database Support
+
+Works with MySQL, PostgreSQL, SQLite through golang-migrate drivers:
 
 ```go
-// MySQL configuration
-migration := rese.V1(newmigrate.NewWithScriptsAndDatabase(&newmigrate.ScriptsAndDatabaseParam{
-    ScriptsInRoot:    "./migrations",
-    DatabaseName:     "mysql",
-    DatabaseInstance: mysqlDriver,
-}))
+// MySQL
+import mysqlmigrate "github.com/golang-migrate/migrate/v4/database/mysql"
+driver := rese.V1(mysqlmigrate.WithInstance(sqlDB, &mysqlmigrate.Config{}))
 
-// PostgreSQL configuration  
-migration := rese.V1(newmigrate.NewWithScriptsAndDBSource[*postgres.Postgres](&newmigrate.ScriptsAndDBSourceParam{
-    ScriptsInRoot: "./migrations",
-    ConnectSource: "postgres://user:pass@localhost/db?sslmode=disable",
-}))
+// PostgreSQL
+import postgresmigrate "github.com/golang-migrate/migrate/v4/database/postgres"
+driver := rese.V1(postgresmigrate.WithInstance(sqlDB, &postgresmigrate.Config{}))
 
-// SQLite configuration
-migration := rese.V1(newmigrate.NewWithScriptsAndDBSource[*sqlite3.Sqlite](&newmigrate.ScriptsAndDBSourceParam{
-    ScriptsInRoot: "./migrations",
-    ConnectSource: "sqlite3://./database.db",
-}))
+// SQLite
+import sqlite3migrate "github.com/golang-migrate/migrate/v4/database/sqlite3"
+driver := rese.V1(sqlite3migrate.WithInstance(sqlDB, &sqlite3migrate.Config{}))
 ```
+
+## Advanced Configuration
 
 ### Embedded Migrations
 
@@ -175,8 +187,6 @@ migration := rese.V1(newmigrate.NewWithEmbedFsAndDatabase(&newmigrate.EmbedFsAnd
     DatabaseInstance: driver,
 }))
 ```
-
-## 🎯 Advanced Features
 
 ### Custom Script Naming
 
@@ -196,62 +206,36 @@ options := newscripts.NewOptions("./scripts").
     WithSurveyWritten(true)
 ```
 
-## 📖 Examples
+## Examples
 
-Check the `internal/demos/` DIR for complete working examples:
+See [internal/demos/](internal/demos) with complete working examples:
 
-- **demo1x/**: MySQL integration with Makefile commands
-- **demo2x/**: PostgreSQL integration with Makefile commands
-- **examples/**: Focused feature demonstrations
-- **sketches/**: Development prototypes
+- [demo1x](internal/demos/demo1x): MySQL integration with Makefile commands
+- [demo2x](internal/demos/demo2x): PostgreSQL integration with Makefile commands
 
-### Demo Commands
-
-**Demo1x - MySQL Integration:**
 ```bash
-# Navigate to demo1x DIR
 cd internal/demos/demo1x
-
-# Generate migration scripts
-make CREATE-SCRIPT-CREATE-TABLE
-make CREATE-SCRIPT-ALTER-SCHEMA
-
-# Preview and execute migrations
-make MIGRATE-PREVIEW-INC
-make MIGRATE-ALL
-make MIGRATE-INC
-```
-
-**Demo2x - PostgreSQL Integration:**
-```bash
-# Navigate to demo2x DIR
-cd internal/demos/demo2x
-
-# Generate migration scripts
-make CREATE-SCRIPT-CREATE-TABLE
-make CREATE-SCRIPT-ALTER-SCHEMA
-
-# Preview and execute migrations
-make MIGRATE-PREVIEW-INC
-make MIGRATE-ALL
-make MIGRATE-INC
+make STATUS              # Check status
+make CREATE-SCRIPT-CREATE-TABLE  # Generate scripts
+make MIGRATE-PREVIEW-INC # Preview
+make MIGRATE-ALL         # Execute
 ```
 
 <!-- TEMPLATE (EN) BEGIN: STANDARD PROJECT FOOTER -->
-<!-- VERSION 2025-09-26 07:39:27.188023 +0000 UTC -->
+<!-- VERSION 2025-11-25 03:52:28.131064 +0000 UTC -->
 
 ## 📄 License
 
-MIT License. See [LICENSE](LICENSE).
+MIT License - see [LICENSE](LICENSE).
 
 ---
 
-## 🤝 Contributing
+## 💬 Contact & Feedback
 
 Contributions are welcome! Report bugs, suggest features, and contribute code:
 
-- 🐛 **Found a mistake?** Open an issue on GitHub with reproduction steps
-- 💡 **Have a feature idea?** Create an issue to discuss the suggestion
+- 🐛 **Mistake reports?** Open an issue on GitHub with reproduction steps
+- 💡 **Fresh ideas?** Create an issue to discuss
 - 📖 **Documentation confusing?** Report it so we can improve
 - 🚀 **Need new features?** Share the use cases to help us understand requirements
 - ⚡ **Performance issue?** Help us optimize through reporting slow operations
@@ -272,7 +256,7 @@ New code contributions, follow this process:
 4. **Branch**: Create a feature branch (`git checkout -b feature/xxx`).
 5. **Code**: Implement the changes with comprehensive tests
 6. **Testing**: (Golang project) Ensure tests pass (`go test ./...`) and follow Go code style conventions
-7. **Documentation**: Update documentation to support client-facing changes and use significant commit messages
+7. **Documentation**: Update documentation to support client-facing changes
 8. **Stage**: Stage changes (`git add .`)
 9. **Commit**: Commit changes (`git commit -m "Add feature xxx"`) ensuring backward compatible code
 10. **Push**: Push to the branch (`git push origin feature/xxx`).

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="200" viewBox="0 0 800 200"
+     xmlns="http://www.w3.org/2000/svg">
+
+    <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="8"
+                refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L7,3 L0,6 z" fill="#4a90e2"/>
+        </marker>
+    </defs>
+
+    <style>
+        .box-label {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            fill: #333;
+        }
+        .box-desc {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+            font-size: 10px;
+            fill: #666;
+        }
+        .arrow-label {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+            font-size: 9px;
+            fill: #4a90e2;
+        }
+    </style>
+
+    <!-- Background -->
+    <rect x="0" y="0" width="800" height="200" fill="#fafafa"/>
+
+    <!-- Step 1: GORM Models -->
+    <g transform="translate(20,60)">
+        <rect width="120" height="80" fill="#fff" stroke="#27ae60" stroke-width="2" rx="6"/>
+        <text x="60" y="35" text-anchor="middle" class="box-label">GORM Models</text>
+        <text x="60" y="52" text-anchor="middle" class="box-desc">type User struct</text>
+        <text x="60" y="65" text-anchor="middle" class="box-desc">with gorm tags</text>
+    </g>
+
+    <!-- Arrow 1 -->
+    <line x1="145" y1="100" x2="175" y2="100" stroke="#4a90e2" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="160" y="90" text-anchor="middle" class="arrow-label">DryRun</text>
+
+    <!-- Step 2: Capture SQL -->
+    <g transform="translate(180,60)">
+        <rect width="120" height="80" fill="#fff" stroke="#4a90e2" stroke-width="2" rx="6"/>
+        <text x="60" y="35" text-anchor="middle" class="box-label">Capture SQL</text>
+        <text x="60" y="52" text-anchor="middle" class="box-desc">checkmigration</text>
+        <text x="60" y="65" text-anchor="middle" class="box-desc">extract DDL</text>
+    </g>
+
+    <!-- Arrow 2 -->
+    <line x1="305" y1="100" x2="335" y2="100" stroke="#4a90e2" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Step 3: Generate Scripts -->
+    <g transform="translate(340,60)">
+        <rect width="130" height="80" fill="#fff" stroke="#e67e22" stroke-width="2" rx="6"/>
+        <text x="65" y="35" text-anchor="middle" class="box-label">Generate Scripts</text>
+        <text x="65" y="52" text-anchor="middle" class="box-desc">000001_xxx.up.sql</text>
+        <text x="65" y="65" text-anchor="middle" class="box-desc">000001_xxx.down.sql</text>
+    </g>
+
+    <!-- Arrow 3 -->
+    <line x1="475" y1="100" x2="505" y2="100" stroke="#4a90e2" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Step 4: golang-migrate -->
+    <g transform="translate(510,60)">
+        <rect width="130" height="80" fill="#fff" stroke="#27ae60" stroke-width="2" rx="6"/>
+        <text x="65" y="35" text-anchor="middle" class="box-label">golang-migrate</text>
+        <text x="65" y="52" text-anchor="middle" class="box-desc">version control</text>
+        <text x="65" y="65" text-anchor="middle" class="box-desc">safe rollback</text>
+    </g>
+
+    <!-- Arrow 4 -->
+    <line x1="645" y1="100" x2="675" y2="100" stroke="#27ae60" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Step 5: Database -->
+    <g transform="translate(680,60)">
+        <ellipse cx="50" cy="15" rx="45" ry="12" fill="#fff" stroke="#7f8c8d" stroke-width="1.5"/>
+        <rect x="5" y="15" width="90" height="50" fill="#fff" stroke="#7f8c8d" stroke-width="1.5"/>
+        <ellipse cx="50" cy="65" rx="45" ry="12" fill="#fff" stroke="#7f8c8d" stroke-width="1.5"/>
+        <line x1="5" y1="15" x2="5" y2="65" stroke="#7f8c8d" stroke-width="1.5"/>
+        <line x1="95" y1="15" x2="95" y2="65" stroke="#7f8c8d" stroke-width="1.5"/>
+        <text x="50" y="45" text-anchor="middle" class="box-label">Database</text>
+    </g>
+
+</svg>

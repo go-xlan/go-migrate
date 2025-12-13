@@ -1,9 +1,9 @@
-// Package newmigrate: Database migration instance factory with multiple initialization strategies
+// Package migrationparam: Database migration instance factory with multiple initialization strategies
 // Provides flexible migration creation supporting file systems, embedded resources and database drivers
 //
-// newmigrate: 数据库迁移实例工厂，支持多种初始化策略
+// migrationparam: 数据库迁移实例工厂，支持多种初始化策略
 // 提供灵活的迁移创建，支持文件系统、嵌入资源和数据库驱动
-package newmigrate
+package migrationparam
 
 import (
 	"github.com/golang-migrate/migrate/v4"

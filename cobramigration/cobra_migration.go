@@ -11,7 +11,7 @@ package cobramigration
 
 import (
 	"github.com/go-xlan/go-migrate/internal/utils"
-	"github.com/go-xlan/go-migrate/newmigrate"
+	"github.com/go-xlan/go-migrate/migrationparam"
 	"github.com/spf13/cobra"
 	"github.com/yyle88/eroticgo"
 )
@@ -23,7 +23,7 @@ import (
 // NewMigrateCmd 创建包含子命令的综合迁移命令，用于所有迁移操作
 // 使用延迟初始化 - 仅在命令运行时创建连接（而非命令树构建时）
 // 迁移连接接口确保操作后正确清理资源
-func NewMigrateCmd(param *newmigrate.MigrationParam) *cobra.Command {
+func NewMigrateCmd(param *migrationparam.MigrationParam) *cobra.Command {
 	// Create root command
 	var rootCmd = &cobra.Command{
 		Use:   "migrate",
@@ -55,7 +55,7 @@ func NewMigrateCmd(param *newmigrate.MigrationParam) *cobra.Command {
 //
 // newAllCmd 创建用于执行所有待处理迁移的命令
 // 将数据库升级到最新的结构版本
-func newAllCmd(param *newmigrate.MigrationParam) *cobra.Command {
+func newAllCmd(param *migrationparam.MigrationParam) *cobra.Command {
 	return &cobra.Command{
 		Use:   "all",
 		Short: "Run all migration files",
@@ -75,7 +75,7 @@ func newAllCmd(param *newmigrate.MigrationParam) *cobra.Command {
 //
 // newDecCMD 创建用于回滚一个迁移步骤的命令
 // 安全地将数据库结构回退一个版本
-func newDecCMD(param *newmigrate.MigrationParam) *cobra.Command {
+func newDecCMD(param *migrationparam.MigrationParam) *cobra.Command {
 	return &cobra.Command{
 		Use:   "dec",
 		Short: "Rollback one step (-1)",
@@ -95,7 +95,7 @@ func newDecCMD(param *newmigrate.MigrationParam) *cobra.Command {
 //
 // newIncCMD 创建用于执行下一个迁移步骤的命令
 // 将数据库结构向前推进一个版本
-func newIncCMD(param *newmigrate.MigrationParam) *cobra.Command {
+func newIncCMD(param *migrationparam.MigrationParam) *cobra.Command {
 	return &cobra.Command{
 		Use:   "inc",
 		Short: "Run next step (+1)",

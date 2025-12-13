@@ -9,6 +9,8 @@
 
 智能数据库迁移工具包，集成 GORM 模型分析和自动化脚本生成功能。
 
+---
+
 ## 生态系统
 
 ![go-migrate overview](assets/go-migrate-overview.svg)
@@ -33,14 +35,15 @@
 
 ## 核心包
 
-| 包名 | 用途 |
-|------|------|
-| `checkmigration` | 对比 GORM 模型与数据库，捕获 SQL 差异 |
-| `newmigrate` | 创建 golang-migrate 实例 |
-| `newscripts` | 生成下一版本迁移脚本 |
+| 包名               | 用途                           |
+|------------------|------------------------------|
+| `checkmigration` | 对比 GORM 模型与数据库，捕获 SQL 差异     |
+| `newmigrate`     | 创建 golang-migrate 实例         |
+| `migrationparam` | 迁移连接管理和调试模式控制                |
+| `newscripts`     | 生成下一版本迁移脚本                   |
 | `cobramigration` | Cobra CLI 命令 (up/down/force) |
-| `previewmigrate` | 执行前预览迁移 |
-| `migrationstate` | 检查迁移状态 |
+| `previewmigrate` | 执行前预览迁移                      |
+| `migrationstate` | 检查迁移状态                       |
 
 ## 安装
 
@@ -67,6 +70,7 @@ package main
 
 import (
     "github.com/go-xlan/go-migrate/cobramigration"
+    "github.com/go-xlan/go-migrate/migrationparam"
     "github.com/go-xlan/go-migrate/migrationstate"
     "github.com/go-xlan/go-migrate/newmigrate"
     "github.com/go-xlan/go-migrate/newscripts"
@@ -83,7 +87,7 @@ func main() {
     scriptsPath := "./scripts"
 
     // MigrationParam 延迟初始化和统一资源管理
-    param := newmigrate.NewMigrationParam(
+    param := migrationparam.NewMigrationParam(
         func() *gorm.DB {
             return setupYourDatabase() // 你的 GORM 配置
         },
@@ -173,6 +177,22 @@ driver := rese.V1(sqlite3migrate.WithInstance(sqlDB, &sqlite3migrate.Config{}))
 ```
 
 ## 高级配置
+
+### 调试模式
+
+启用调试模式以查看详细的 SQL 捕获和迁移分析输出：
+
+```go
+import "github.com/go-xlan/go-migrate/migrationparam"
+
+// 启用迁移操作的调试模式
+migrationparam.SetDebugMode(true)
+
+// 检查当前调试模式状态
+if migrationparam.GetDebugMode() {
+    // 调试日志已启用
+}
+```
 
 ### 嵌入式迁移
 

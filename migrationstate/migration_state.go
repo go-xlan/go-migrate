@@ -13,7 +13,7 @@ import (
 	"sort"
 
 	"github.com/go-xlan/go-migrate/checkmigration"
-	"github.com/go-xlan/go-migrate/newmigrate"
+	"github.com/go-xlan/go-migrate/migrationparam"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/pkg/errors"
@@ -30,9 +30,9 @@ import (
 // Config 包含状态命令所需的配置选项
 // 提供执行状态检查时所需的依赖
 type Config struct {
-	Param       *newmigrate.MigrationParam // Migration connection // 迁移连接
-	ScriptsPath string                     // Path to migration scripts DIR // 迁移脚本目录路径
-	Objects     []any                      // GORM model objects used in schema comparison // 用于结构比较的 GORM 模型对象
+	Param       *migrationparam.MigrationParam // Migration connection // 迁移连接
+	ScriptsPath string                         // Path to migration scripts DIR // 迁移脚本目录路径
+	Objects     []any                          // GORM model objects used in schema comparison // 用于结构比较的 GORM 模型对象
 }
 
 // Status represents the current migration status
@@ -103,9 +103,9 @@ func GetStatus(db *gorm.DB, migration *migrate.Migrate, scriptsPath string, obje
 	// Check schema differences when objects are provided
 	// 当提供对象时检查结构差异
 	if len(objects) > 0 {
-		diffSQLs := checkmigration.CheckMigrate(db, objects)
-		status.SchemaDiffSQLs = diffSQLs
-		status.SchemaDiffCount = len(diffSQLs)
+		migrateOps := checkmigration.GetMigrateOps(db, objects)
+		status.SchemaDiffSQLs = migrateOps.GetForwardSQLs()
+		status.SchemaDiffCount = len(status.SchemaDiffSQLs)
 	}
 
 	return status, nil

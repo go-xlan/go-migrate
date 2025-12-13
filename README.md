@@ -7,7 +7,9 @@
 
 # go-migrate
 
-Intelligent database migration toolkit with GORM model integration and automated script generation.
+Intelligent database migration toolkit with GORM struct integration and automated script generation.
+
+---
 
 ## Ecosystem
 
@@ -33,14 +35,15 @@ Intelligent database migration toolkit with GORM model integration and automated
 
 ## Core Packages
 
-| Package | Purpose |
-|---------|---------|
+| Package          | Purpose                                                    |
+|------------------|------------------------------------------------------------|
 | `checkmigration` | Compare GORM models with database, capture SQL differences |
-| `newmigrate` | Create golang-migrate instance |
-| `newscripts` | Generate next version migration scripts |
-| `cobramigration` | Cobra CLI commands (up/down/force) |
-| `previewmigrate` | Preview migrations before execution |
-| `migrationstate` | Check migration status |
+| `newmigrate`     | Create golang-migrate instance                             |
+| `migrationparam` | Migration connection management and debug mode settings    |
+| `newscripts`     | Generate next version migration scripts                    |
+| `cobramigration` | Cobra CLI commands (up/down/force)                         |
+| `previewmigrate` | Preview migrations before execution                        |
+| `migrationstate` | Check migration status                                     |
 
 ## Installation
 
@@ -60,13 +63,14 @@ type User struct {
 }
 ```
 
-### 2. Setup CLI Tool
+### 2. Setup CLI Program
 
 ```go
 package main
 
 import (
     "github.com/go-xlan/go-migrate/cobramigration"
+    "github.com/go-xlan/go-migrate/migrationparam"
     "github.com/go-xlan/go-migrate/migrationstate"
     "github.com/go-xlan/go-migrate/newmigrate"
     "github.com/go-xlan/go-migrate/newscripts"
@@ -83,7 +87,7 @@ func main() {
     scriptsPath := "./scripts"
 
     // MigrationParam with lazy initialization and unified resource management
-    param := newmigrate.NewMigrationParam(
+    param := migrationparam.NewMigrationParam(
         func() *gorm.DB {
             return setupYourDatabase() // Your GORM setup
         },
@@ -147,7 +151,7 @@ go run main.go migrate all    # All pending
 | Command | Description |
 |---------|-------------|
 | `status` | Show database version, pending migrations, schema diff |
-| `new-script` | Generate migration scripts from model changes |
+| `new-script` | Generate migration scripts based on schema changes |
 | `preview inc` | Preview next migration without executing |
 | `migrate inc` | Execute next migration |
 | `migrate dec` | Rollback one migration |
@@ -173,6 +177,22 @@ driver := rese.V1(sqlite3migrate.WithInstance(sqlDB, &sqlite3migrate.Config{}))
 ```
 
 ## Advanced Configuration
+
+### Debug Mode
+
+Enable debug mode to see detailed SQL capture and migration analysis output:
+
+```go
+import "github.com/go-xlan/go-migrate/migrationparam"
+
+// Enable debug mode for migration operations
+migrationparam.SetDebugMode(true)
+
+// Check current debug mode status
+if migrationparam.GetDebugMode() {
+    // Debug logging is enabled
+}
+```
 
 ### Embedded Migrations
 

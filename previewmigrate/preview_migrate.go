@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	"github.com/go-xlan/go-migrate/internal/utils"
-	"github.com/go-xlan/go-migrate/newmigrate"
+	"github.com/go-xlan/go-migrate/migrationparam"
 	"github.com/go-xlan/go-migrate/newscripts"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/spf13/cobra"
@@ -34,7 +34,7 @@ import (
 // NewPreviewCmd 创建具有子命令的迁移试运行预览命令
 // 使用 MigrationParam 接口统一管理连接和资源清理
 // 确保预览操作完成后正确释放资源
-func NewPreviewCmd(param *newmigrate.MigrationParam, scriptsPath string) *cobra.Command {
+func NewPreviewCmd(param *migrationparam.MigrationParam, scriptsPath string) *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:   "preview",
 		Short: "Preview migrations (dry-run)",
@@ -50,7 +50,7 @@ func NewPreviewCmd(param *newmigrate.MigrationParam, scriptsPath string) *cobra.
 //
 // newPreviewIncCmd 创建用于预览下一个迁移步骤的命令
 // 在事务中测试下一个迁移 SQL 而不对数据库应用更改
-func newPreviewIncCmd(param *newmigrate.MigrationParam, scriptsPath string) *cobra.Command {
+func newPreviewIncCmd(param *migrationparam.MigrationParam, scriptsPath string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "inc",
 		Short: "Preview next migration step (+1)",

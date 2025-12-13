@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-xlan/go-migrate/migrationparam"
 	"github.com/yyle88/eroticgo"
 	"github.com/yyle88/must"
 	"github.com/yyle88/neatjson/neatjsons"
@@ -24,68 +25,84 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// CustomLogger implements GORM logger interface to capture executed SQL statements
-// Uses slice collection to record all SQL operations during DryRun mode
+// SqlCapture implements GORM logger interface to capture executed SQL statements
+// Uses slice collection to record SQL operations during DryRun mode
 // Provides tracing capabilities for migration analysis and script generation
 //
-// CustomLogger 实现 GORM 日志接口来捕获执行的 SQL 语句
-// 使用切片集合在 DryRun 模式下记录所有 SQL 操作
+// SqlCapture 实现 GORM 日志接口来捕获执行的 SQL 语句
+// 使用切片集合在 DryRun 模式下记录 SQL 操作
 // 为迁移分析和脚本生成提供跟踪功能
-type CustomLogger struct {
-	SQLs []string // Collection of captured SQL statements // 捕获的 SQL 语句集合
+type SqlCapture struct {
+	SQLs      []string // Collection of captured SQL statements // 捕获的 SQL 语句集合
+	debugMode bool     // Enable debug output // 调试模式
 }
 
-func (c *CustomLogger) LogMode(level logger.LogLevel) logger.Interface {
-	zaplog.SUG.Debugln("mode", int(level))
+func (c *SqlCapture) LogMode(level logger.LogLevel) logger.Interface {
+	if c.debugMode {
+		zaplog.SUG.Debugln("mode", int(level))
+	}
 	return c
 }
 
-func (c *CustomLogger) Info(_ context.Context, msg string, data ...interface{}) {
-	zaplog.SUG.Infoln("info", fmt.Sprintf(msg, data...))
+func (c *SqlCapture) Info(_ context.Context, msg string, data ...interface{}) {
+	if c.debugMode {
+		zaplog.SUG.Infoln("info", fmt.Sprintf(msg, data...))
+	}
 }
 
-func (c *CustomLogger) Warn(_ context.Context, msg string, data ...interface{}) {
-	zaplog.SUG.Warnln("warn", fmt.Sprintf(msg, data...))
+func (c *SqlCapture) Warn(_ context.Context, msg string, data ...interface{}) {
+	if c.debugMode {
+		zaplog.SUG.Warnln("warn", fmt.Sprintf(msg, data...))
+	}
 }
 
-func (c *CustomLogger) Error(_ context.Context, msg string, data ...interface{}) {
-	zaplog.SUG.Errorln("error", fmt.Sprintf(msg, data...))
+func (c *SqlCapture) Error(_ context.Context, msg string, data ...interface{}) {
+	if c.debugMode {
+		zaplog.SUG.Errorln("error", fmt.Sprintf(msg, data...))
+	}
 }
 
-func (c *CustomLogger) Trace(_ context.Context, begin time.Time, fc func() (string, int64), err error) {
+func (c *SqlCapture) Trace(_ context.Context, begin time.Time, fc func() (string, int64), err error) {
 	sqx, _ := fc()
-	zaplog.SUG.Debugln("SQL>>>", eroticgo.GREEN.Sprint(sqx), "<<<END")
+	if c.debugMode {
+		zaplog.SUG.Debugln("SQL>>>", eroticgo.GREEN.Sprint(sqx), "<<<END")
+	}
 	c.SQLs = append(c.SQLs, sqx)
 }
 
 // GetMigrateOps analyzes GORM models and generates migration operations based on database differences
 // Uses GORM DryRun mode with custom logger to capture SQL statements without execution
 // Returns structured migration operations with both forward and reverse SQL scripts
+// Debug output controlled by package-level SetDebugMode
 //
 // GetMigrateOps 分析 GORM 模型并基于数据库差异生成迁移操作
 // 使用 GORM DryRun 模式和自定义日志来捕获 SQL 语句而不执行
 // 返回包含正向和反向 SQL 脚本的结构化迁移操作
+// 调试输出由包级别的 SetDebugMode 控制
 func GetMigrateOps(db *gorm.DB, objects []interface{}) MigrationOps {
-	// Create custom logger for SQL capture
-	// 创建用于 SQL 捕获的自定义日志
-	customLogger := &CustomLogger{
-		SQLs: make([]string, 0),
+	// Create SqlCapture for SQL capture
+	// 创建 SqlCapture 用于 SQL 捕获
+	sqlCapture := &SqlCapture{
+		SQLs:      make([]string, 0),
+		debugMode: migrationparam.GetDebugMode(),
 	}
 
-	// Use DryRun mode with custom logger to capture SQL without execution
-	// 使用 DryRun 模式和自定义日志来捕获 SQL 而不执行
+	// Use DryRun mode with SqlCapture to capture SQL without execution
+	// 使用 DryRun 模式和 SqlCapture 来捕获 SQL 而不执行
 	session := &gorm.Session{
 		DryRun: true,
-		Logger: customLogger,
+		Logger: sqlCapture,
 	}
 	must.Done(db.Session(session).AutoMigrate(objects...))
 
 	// Display captured SQL statements for debugging
 	// 显示捕获的 SQL 语句用于调试
-	zaplog.SUG.Debugln("execute:", eroticgo.BLUE.Sprint(neatjsons.S(customLogger.SQLs)))
+	if sqlCapture.debugMode {
+		zaplog.SUG.Debugln("execute:", eroticgo.BLUE.Sprint(neatjsons.S(sqlCapture.SQLs)))
+	}
 
-	results := make([]*MigrationOp, 0, len(customLogger.SQLs))
-	for _, forwardSQL := range customLogger.SQLs {
+	results := make([]*MigrationOp, 0, len(sqlCapture.SQLs))
+	for _, forwardSQL := range sqlCapture.SQLs {
 		// Parse SQL to determine if migration is needed
 		// 解析 SQL 以确定是否需要迁移
 		if migrationOp, match := NewMigrationOp(forwardSQL); match {

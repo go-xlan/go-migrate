@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-xlan/go-migrate/cobramigration"
 	"github.com/go-xlan/go-migrate/internal/demos/demo2x/internal/models"
+	"github.com/go-xlan/go-migrate/migrationparam"
 	"github.com/go-xlan/go-migrate/migrationstate"
 	"github.com/go-xlan/go-migrate/newmigrate"
 	"github.com/go-xlan/go-migrate/newscripts"
@@ -25,15 +26,23 @@ import (
 )
 
 func main() {
+	var rootCmd = &cobra.Command{
+		Use:   "main",
+		Short: "main",
+		Long:  "main",
+	}
+
 	// docker run -d --name=postgres -e POSTGRES_PASSWORD=123456 -p 5432:5432 postgres
 	cfg := &PostgresConfig{
 		Dsn: "postgres://postgres:123456@localhost:5432/xlan_migrate_demo2x?sslmode=disable&TimeZone=UTC",
 	}
 	scriptsInRoot := runpath.PARENT.Join("scripts")
 
+	migrationparam.SetDebugMode(true)
+
 	// Migration connection with lazy initialization and unified resource management
 	// 迁移连接，支持延迟初始化和统一资源管理
-	param := newmigrate.NewMigrationParam(
+	param := migrationparam.NewMigrationParam(
 		func() *gorm.DB {
 			return newGormDB(cfg)
 		},
@@ -49,12 +58,6 @@ func main() {
 			))
 		},
 	)
-
-	var rootCmd = &cobra.Command{
-		Use:   "main",
-		Short: "main",
-		Long:  "main",
-	}
 
 	// Random version objects to simulate different development stages
 	// 随机版本对象，模拟不同开发阶段的迁移场景

@@ -3,7 +3,7 @@ package newscripts
 import (
 	"github.com/go-xlan/go-migrate/checkmigration"
 	"github.com/go-xlan/go-migrate/internal/utils"
-	"github.com/go-xlan/go-migrate/newmigrate"
+	"github.com/go-xlan/go-migrate/migrationparam"
 	"github.com/spf13/cobra"
 	"github.com/yyle88/eroticgo"
 	"github.com/yyle88/must"
@@ -19,9 +19,9 @@ import (
 // 使用 MigrationParam 接口统一管理连接和资源清理
 // 确保迁移操作完成后正确释放资源
 type Config struct {
-	Param   *newmigrate.MigrationParam // Migration connection // 迁移连接
-	Options *Options                   // Script generation options // 脚本生成选项
-	Objects []interface{}              // GORM model objects for migration analysis // 用于迁移分析的 GORM 模型对象
+	Param   *migrationparam.MigrationParam // Migration connection // 迁移连接
+	Options *Options                       // Script generation options // 脚本生成选项
+	Objects []interface{}                  // GORM model objects for migration analysis // 用于迁移分析的 GORM 模型对象
 }
 
 // NewScriptCmd creates the main command for migration script management with subcommands

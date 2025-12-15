@@ -205,6 +205,7 @@ func NewStatusCmd(cfg *Config) *cobra.Command {
 		Use:   "status",
 		Short: "Show migration status",
 		Long:  "Show current database version, script versions, pending migrations and schema differences",
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			migration, cleanup := cfg.Param.GetMigration()
 			defer cleanup()

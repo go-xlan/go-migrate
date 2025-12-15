@@ -39,6 +39,7 @@ func NewPreviewCmd(param *migrationparam.MigrationParam, scriptsPath string) *co
 		Use:   "preview",
 		Short: "Preview migrations (dry-run)",
 		Long:  "Test migration SQL without applying changes",
+		Args:  cobra.NoArgs,
 	}
 
 	rootCmd.AddCommand(newPreviewIncCmd(param, scriptsPath))
@@ -55,6 +56,7 @@ func newPreviewIncCmd(param *migrationparam.MigrationParam, scriptsPath string) 
 		Use:   "inc",
 		Short: "Preview next migration step (+1)",
 		Long:  "Test next migration SQL without applying changes",
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			migration, cleanup := param.GetMigration()
 			defer cleanup()
@@ -81,7 +83,7 @@ func newPreviewIncCmd(param *migrationparam.MigrationParam, scriptsPath string) 
 func previewNextMigration(migration *migrate.Migrate, db *gorm.DB, scriptsPath string) error {
 	// 1. Get current version
 	currentVersion, dirtyFlag, err := migration.Version()
-	utils.WhistleCause(err) //panic when cause is not expected
+	utils.WhistleCause(err) // panic when cause is not expected
 	if dirtyFlag {
 		return erero.Errorf("DATABASE IS DIRTY AT VERSION %d", currentVersion)
 	}
@@ -114,7 +116,7 @@ func previewNextMigration(migration *migrate.Migrate, db *gorm.DB, scriptsPath s
 	tx.Rollback() // Always rollback - this is a preview!
 
 	if err != nil {
-		zaplog.SUG.Debugln(eroticgo.RED.Sprint("PREVIEW FAILED - SQL EXECUTION ERROR:"))
+		zaplog.SUG.Debugln(eroticgo.RED.Sprint("PREVIEW FAILED - SQL EXEC ISSUE:"))
 		zaplog.SUG.Errorln(err)
 		return erero.Errorf("PREVIEW FAILED: %v", err)
 	}

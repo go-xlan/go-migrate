@@ -7,8 +7,8 @@ import (
 	"github.com/yyle88/osexistpath/osmustexist"
 )
 
-// ScriptAction represents the type of action to perform on migration scripts
-// Determines whether to create new scripts or update existing ones
+// ScriptAction represents the type of action to execute on migration scripts
+// Determines if new scripts should be created, or if existing ones need updates
 //
 // ScriptAction 表示对迁移脚本执行的操作类型
 // 决定是创建新脚本还是更新现有脚本
@@ -47,9 +47,9 @@ func (scriptInfo *NewScriptInfo) WriteScripts(migrationOps checkmigration.Migrat
 	mustWriteScript(scriptInfo.Action, scriptInfo.ReverseName, reverseScript, options)
 }
 
-// ScriptExists checks whether migration script files already exist in the target DIR
+// ScriptExists checks if migration script files exist in the target DIR
 // Verifies existence of both forward and reverse script files
-// Returns true if any of the script files are found
+// Returns true when script files are found
 //
 // ScriptExists 检查迁移脚本文件是否已存在于目标 DIR 中
 // 验证正向和反向脚本文件的存在性
@@ -64,6 +64,9 @@ func (scriptInfo *NewScriptInfo) ScriptExists(options *Options) bool {
 	return false
 }
 
+// GetScriptNames returns script names struct containing forward and reverse filenames
+//
+// GetScriptNames 返回包含正向和反向文件名的脚本名称结构
 func (scriptInfo *NewScriptInfo) GetScriptNames() *NewScriptNames {
 	return &NewScriptNames{
 		ForwardName: scriptInfo.ForwardName,

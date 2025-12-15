@@ -26,19 +26,24 @@ import (
 )
 
 func main() {
+	var debugMode bool
+
 	var rootCmd = &cobra.Command{
 		Use:   "main",
 		Short: "main",
 		Long:  "main",
+		Args:  cobra.NoArgs,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			migrationparam.SetDebugMode(debugMode)
+		},
 	}
+	rootCmd.PersistentFlags().BoolVar(&debugMode, "debug", false, "enable debug mode")
 
 	// docker run -d --name=postgres -e POSTGRES_PASSWORD=123456 -p 5432:5432 postgres
 	cfg := &PostgresConfig{
 		Dsn: "postgres://postgres:123456@localhost:5432/xlan_migrate_demo2x?sslmode=disable&TimeZone=UTC",
 	}
 	scriptsInRoot := runpath.PARENT.Join("scripts")
-
-	migrationparam.SetDebugMode(true)
 
 	// Migration connection with lazy initialization and unified resource management
 	// 迁移连接，支持延迟初始化和统一资源管理

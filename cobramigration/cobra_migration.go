@@ -29,12 +29,13 @@ func NewMigrateCmd(param *migrationparam.MigrationParam) *cobra.Command {
 		Use:   "migrate",
 		Short: "Database migration",
 		Long:  "Database migration",
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			migration, cleanup := param.GetMigration()
 			defer cleanup()
 
 			version, dirtyFlag, err := migration.Version()
-			utils.WhistleCause(err) //panic when cause is not expected
+			utils.WhistleCause(err) // panic when cause is not expected
 			if dirtyFlag {
 				eroticgo.RED.ShowMessage(version, "(DIRTY)")
 			} else {
@@ -43,9 +44,9 @@ func NewMigrateCmd(param *migrationparam.MigrationParam) *cobra.Command {
 		},
 	}
 
-	rootCmd.AddCommand(newAllCmd(param)) // Add `all` command
-	rootCmd.AddCommand(newIncCMD(param)) // Add `inc` command
-	rootCmd.AddCommand(newDecCMD(param)) // Add `dec` command
+	rootCmd.AddCommand(newAllCmd(param)) // Append `all` subcommand // 添加 `all` 子命令
+	rootCmd.AddCommand(newIncCMD(param)) // Append `inc` subcommand // 添加 `inc` 子命令
+	rootCmd.AddCommand(newDecCMD(param)) // Append `dec` subcommand // 添加 `dec` 子命令
 
 	return rootCmd
 }
@@ -59,6 +60,7 @@ func newAllCmd(param *migrationparam.MigrationParam) *cobra.Command {
 	return &cobra.Command{
 		Use:   "all",
 		Short: "Run all migration files",
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			migration, cleanup := param.GetMigration()
 			defer cleanup()
@@ -79,6 +81,7 @@ func newDecCMD(param *migrationparam.MigrationParam) *cobra.Command {
 	return &cobra.Command{
 		Use:   "dec",
 		Short: "Rollback one step (-1)",
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			migration, cleanup := param.GetMigration()
 			defer cleanup()
@@ -99,6 +102,7 @@ func newIncCMD(param *migrationparam.MigrationParam) *cobra.Command {
 	return &cobra.Command{
 		Use:   "inc",
 		Short: "Run next step (+1)",
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			migration, cleanup := param.GetMigration()
 			defer cleanup()

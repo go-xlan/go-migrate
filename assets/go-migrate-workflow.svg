@@ -105,7 +105,7 @@
         <rect width="200" height="55" fill="#fff" stroke="#9b59b6" stroke-width="2" rx="6" stroke-dasharray="4,2">
             <animate attributeName="stroke-width" values="2;2.5;2" dur="2.5s" repeatCount="indefinite"/>
         </rect>
-        <text x="100" y="25" text-anchor="middle" class="box-label">Preview (optional)</text>
+        <text x="100" y="25" text-anchor="middle" class="box-label">Preview Migration</text>
         <text x="100" y="43" text-anchor="middle" class="box-desc">Check before execution</text>
     </g>
     <!-- Package -->
@@ -123,7 +123,7 @@
             <animate attributeName="stroke-width" values="2;2.5;2" dur="2.6s" repeatCount="indefinite"/>
         </rect>
         <text x="100" y="25" text-anchor="middle" class="box-label">Execute Migration</text>
-        <text x="100" y="43" text-anchor="middle" class="box-desc">up / down / force via golang-migrate</text>
+        <text x="100" y="43" text-anchor="middle" class="box-desc">inc / dec / all with golang-migrate</text>
     </g>
     <!-- Package -->
     <g transform="translate(370,400)">

@@ -26,18 +26,23 @@ import (
 )
 
 func main() {
+	var debugMode bool
+
 	var rootCmd = &cobra.Command{
 		Use:   "main",
 		Short: "main",
 		Long:  "main",
+		Args:  cobra.NoArgs,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			migrationparam.SetDebugMode(debugMode)
+		},
 	}
+	rootCmd.PersistentFlags().BoolVar(&debugMode, "debug", false, "enable debug mode")
 
 	cfg := &MysqlConfig{
 		Dsn: "root:123456@tcp(localhost:3306)/xlan_migrate_demo1x?charset=utf8mb4&parseTime=true&multiStatements=true",
 	}
 	scriptsInRoot := runpath.PARENT.Join("scripts")
-
-	migrationparam.SetDebugMode(true)
 
 	// Migration connection with lazy initialization and unified resource management
 	// 迁移连接，支持延迟初始化和统一资源管理

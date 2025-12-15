@@ -41,7 +41,7 @@
 | `newmigrate`     | 创建 golang-migrate 实例         |
 | `migrationparam` | 迁移连接管理和调试模式控制                |
 | `newscripts`     | 生成下一版本迁移脚本                   |
-| `cobramigration` | Cobra CLI 命令 (up/down/force) |
+| `cobramigration` | Cobra CLI 命令 (inc/dec/all) |
 | `previewmigrate` | 执行前预览迁移                      |
 | `migrationstate` | 检查迁移状态                       |
 
@@ -152,11 +152,13 @@ go run main.go migrate all    # 执行所有待处理
 |------|------|
 | `status` | 显示数据库版本、待处理迁移、结构差异 |
 | `new-script` | 从模型变更生成迁移脚本 |
+| `new-script create` | 创建新迁移脚本（支持选项） |
+| `new-script update` | 更新最新未提交的迁移脚本 |
 | `preview inc` | 预览下一次迁移而不执行 |
+| `migrate` | 显示当前迁移版本 |
 | `migrate inc` | 执行下一次迁移 |
 | `migrate dec` | 回滚一次迁移 |
 | `migrate all` | 执行所有待处理迁移 |
-| `migrate force N` | 强制设置版本号为 N |
 
 ## 数据库支持
 
@@ -211,19 +213,20 @@ migration := rese.V1(newmigrate.NewWithEmbedFsAndDatabase(&newmigrate.EmbedFsAnd
 ### 自定义脚本命名
 
 ```go
+// 配置版本模式和描述
 naming := &newscripts.ScriptNaming{
-    NewScriptPrefix: func(version uint) string {
-        return fmt.Sprintf("%d_%s", version, description)
-    },
+    VersionType: newscripts.VersionTime, // 使用时间戳: 20250621103045
+    Description: "add_user_table",       // 脚本描述
 }
+// 生成: 20250621103045_add_user_table.up.sql
 ```
 
 ### 迁移选项
 
 ```go
-options := newscripts.NewOptions("./scripts").
-    WithDryRun(true).
-    WithSurveyWritten(true)
+options := newscripts.NewOptions("./scripts")
+options.DryRun = true        // 预览模式，不写入文件
+options.SurveyWritten = true // 写入前提示确认
 ```
 
 ## 示例

@@ -26,6 +26,11 @@ type MigrationParam struct {
 	migration    *migrate.Migrate
 }
 
+// NewMigrationParam creates param with database and migration factory functions
+// Uses delayed initialization to create connections when needed
+//
+// NewMigrationParam 使用数据库和迁移工厂函数创建参数
+// 使用延迟初始化在需要时创建连接
 func NewMigrationParam(newDB func() *gorm.DB, newMigration func(db *gorm.DB) *migrate.Migrate) *MigrationParam {
 	return &MigrationParam{
 		newDB:        newDB,
@@ -33,6 +38,11 @@ func NewMigrationParam(newDB func() *gorm.DB, newMigration func(db *gorm.DB) *mi
 	}
 }
 
+// GetDB returns database connection with cleanup function
+// Creates connection on first access using delayed initialization
+//
+// GetDB 返回数据库连接和清理函数
+// 使用延迟初始化在首次访问时创建连接
 func (p *MigrationParam) GetDB() (*gorm.DB, func()) {
 	if p.db == nil {
 		p.db = p.newDB()
@@ -40,11 +50,16 @@ func (p *MigrationParam) GetDB() (*gorm.DB, func()) {
 	return p.db, p.cleanup
 }
 
+// GetMigration returns migration instance with cleanup function
+// Creates migration on first access using delayed initialization
+//
+// GetMigration 返回迁移实例和清理函数
+// 使用延迟初始化在首次访问时创建迁移
 func (p *MigrationParam) GetMigration() (*migrate.Migrate, func()) {
 	if p.migration == nil {
 		db, cleanup := p.GetDB()
 		p.migration = p.newMigration(db)
-		_ = cleanup // 结果里的 cleanup 包含这个的 cleanup
+		_ = cleanup // Cleanup included in returned function // 结果里的 cleanup 包含这个的 cleanup
 	}
 	return p.migration, p.cleanup
 }

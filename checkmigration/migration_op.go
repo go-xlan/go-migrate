@@ -75,12 +75,22 @@ func NewMigrationOp(forwardSQL string) (*MigrationOp, bool) {
 	return nil, false
 }
 
+// GetForwardSQL returns the forward migration SQL statement
+//
+// GetForwardSQL 返回正向迁移 SQL 语句
 func (op *MigrationOp) GetForwardSQL() string {
 	return op.ForwardSQL
 }
 
+// GetReverseSQL returns the reverse migration SQL statement with success flag
+// Returns placeholder statement when reverse migration is not implemented
+//
+// GetReverseSQL 返回反向迁移 SQL 语句和成功标志
+// 当反向迁移未实现时返回占位语句
 func (op *MigrationOp) GetReverseSQL() (string, bool) {
-	return raiseStatement + " -- " + op.Kind.ReverseSubstr, false //认为肯定有更好的工具来做这件事，这里暂时不要实现这个功能(别整太复杂反正早期也没人用的)
+	// TODO: Consider using specialized tools to implement reverse migration
+	// TODO: 考虑使用专门的工具来实现反向迁移
+	return raiseStatement + " -- " + op.Kind.ReverseSubstr, false
 }
 
 // MigrationOps represents a collection of migration operations with batch processing capabilities
@@ -92,6 +102,11 @@ func (op *MigrationOp) GetReverseSQL() (string, bool) {
 // 支持正向和反向迁移脚本创建
 type MigrationOps []*MigrationOp
 
+// SearchOp finds migration operation matching the given forward SQL statement
+// Uses case-insensitive comparison to locate operations
+//
+// SearchOp 查找匹配给定正向 SQL 语句的迁移操作
+// 使用不区分大小写的比较来定位操作
 func (ops MigrationOps) SearchOp(forwardSQL string) *MigrationOp {
 	posIndex := slices.IndexFunc(ops, func(op *MigrationOp) bool {
 		return strings.EqualFold(op.ForwardSQL, forwardSQL)
@@ -101,6 +116,11 @@ func (ops MigrationOps) SearchOp(forwardSQL string) *MigrationOp {
 	})
 }
 
+// GetForwardSQLs extracts forward SQL statements from all migration operations
+// Returns slice of SQL strings in execution sequence
+//
+// GetForwardSQLs 从所有迁移操作中提取正向 SQL 语句
+// 按执行顺序返回 SQL 字符串切片
 func (ops MigrationOps) GetForwardSQLs() []string {
 	var sqs = make([]string, 0, len(ops))
 	for _, op := range ops {
@@ -109,6 +129,11 @@ func (ops MigrationOps) GetForwardSQLs() []string {
 	return sqs
 }
 
+// GetForwardScript generates complete forward migration script with semicolons
+// Combines all forward SQL statements into executable script format
+//
+// GetForwardScript 生成带分号的完整正向迁移脚本
+// 将所有正向 SQL 语句组合成可执行的脚本格式
 func (ops MigrationOps) GetForwardScript() string {
 	var sqs = make([]string, 0, len(ops))
 	for _, op := range ops {
@@ -121,10 +146,16 @@ func (ops MigrationOps) GetForwardScript() string {
 	return res
 }
 
+// GetReverseScript generates reverse migration script with success status
+// Reverses operation sequence (last-in-first-out) and includes TODO markers when needed
+//
+// GetReverseScript 生成反向迁移脚本并返回成功状态
+// 反转操作顺序（后进先出）并在需要时包含 TODO 标记
 func (ops MigrationOps) GetReverseScript() (string, bool) {
 	var sqs = make([]string, 0, len(ops))
 	var okk = true
-	// 需要倒序执行逆向的操作，比如先删除索引再删除列，这样拼接出来
+	// Execute reverse operations in reverse sequence, e.g., drop index before drop column
+	// 需要倒序执行逆向的操作，比如先删除索引再删除列
 	for idx := len(ops) - 1; idx >= 0; idx-- {
 		op := ops[idx]
 		reverseSQL, ok := op.GetReverseSQL()
@@ -132,13 +163,13 @@ func (ops MigrationOps) GetReverseScript() (string, bool) {
 			sqs = append(sqs, reverseSQL+";")
 			continue
 		}
-		okk = false //只要有一个出错，就记录下来有错
+		okk = false // Mark as incomplete when any operation fails // 只要有一个出错，就记录下来有错
 		reverseSQL = zerotern.VF(reverseSQL, func() string {
 			return raiseStatement + " -- " + op.Kind.ReverseSubstr
 		})
 		forwardSQL := op.GetForwardSQL()
 		sqLine := fmt.Sprintf("-- reverse -- %s;\n%s; -- TODO", forwardSQL, reverseSQL)
-		sqs = append(sqs, sqLine) //当有错误时，就使用注释“待做”拼接它们
+		sqs = append(sqs, sqLine) // Append with TODO comment when incomplete // 当有错误时，使用注释"待做"拼接它们
 	}
 	res := strings.Join(sqs, "\n\n")
 	if len(res) > 0 {

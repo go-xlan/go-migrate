@@ -9,9 +9,9 @@ import (
 	"github.com/yyle88/must"
 )
 
-// Options contains configuration parameters for migration script generation and execution
-// Controls script location, execution modes, and user interaction behavior
-// Provides flexible configuration for different deployment and development scenarios
+// Options contains configuration parameters to generate and execute migration scripts
+// Controls script location, execution modes, and interaction patterns
+// Provides flexible configuration suited to different deployment and development scenarios
 //
 // Options 包含迁移脚本生成和执行的配置参数
 // 控制脚本位置、执行模式和用户交互行为
@@ -39,9 +39,9 @@ func NewOptions(scriptsInRoot string) *Options {
 	}
 }
 
-// VersionPattern defines the strategy for generating migration script version numbers
-// Supports different versioning approaches for various project requirements
-// Each pattern provides unique benefits for different development workflows
+// VersionPattern defines the approach to generate migration script version numbers
+// Supports different versioning methods to suit various project needs
+// Each pattern provides unique benefits suited to different development workflows
 //
 // VersionPattern 定义生成迁移脚本版本号的策略
 // 为各种项目需求支持不同的版本控制方法
@@ -54,13 +54,16 @@ const (
 	VersionTime VersionPattern = "TIME" // Formatted datetime versions, e.g., 20250621103045 // 格式化日时版本，例如 20250621103045
 )
 
+// parseVersionType converts string input to VersionPattern enum with validation
+//
+// parseVersionType 将字符串输入转换为 VersionPattern 枚举，并进行验证
 func parseVersionType(s string) VersionPattern {
 	switch strings.ToUpper(s) {
 	case "NEXT":
 		return VersionNext
 	case "UNIX":
 		return VersionUnix
-	case "TIME": // 支持 TIME 和 DATETIME 两种写法
+	case "TIME": // Supports both TIME and DATETIME formats // 支持 TIME 和 DATETIME 两种写法
 		return VersionTime
 	default:
 		panic("unknown version-type: " + s + " (must be NEXT, UNIX, TIME)")
@@ -93,19 +96,25 @@ func NewScriptNaming() *ScriptNaming {
 	}
 }
 
+// newVersion generates version string based on configured pattern
+//
+// newVersion 基于配置的模式生成版本字符串
 func (T *ScriptNaming) newVersion(versionNum uint) string {
 	switch T.VersionType {
 	case VersionNext:
-		return fmt.Sprintf("%05d", versionNum) // 在数字左侧补零宽度 5 位，例如 00001, 00002
+		return fmt.Sprintf("%05d", versionNum) // Zero-pad to 5 digits, e.g., 00001, 00002 // 在数字左侧补零宽度 5 位，例如 00001, 00002
 	case VersionUnix:
-		return strconv.FormatInt(time.Now().Unix(), 10) // 当前 Unix 时间戳（秒数）
+		return strconv.FormatInt(time.Now().Unix(), 10) // Current Unix timestamp in seconds // 当前 Unix 时间戳（秒数）
 	case VersionTime:
-		return time.Now().Format("20060102150405") // 格式：YYYYMMDDHHMMSS，例如 20250621103045
+		return time.Now().Format("20060102150405") // Format: YYYYMMDDHHMMSS, e.g., 20250621103045 // 格式：YYYYMMDDHHMMSS，例如 20250621103045
 	default:
-		panic("unknown VersionPattern: " + string(T.VersionType)) // 如果没有匹配，返回空字符串或 panic
+		panic("unknown VersionPattern: " + string(T.VersionType)) // Panic on unmatched pattern // 未匹配模式时 panic
 	}
 }
 
+// NewScriptPrefix creates script filename prefix combining version and description
+//
+// NewScriptPrefix 创建结合版本和描述的脚本文件名前缀
 func (T *ScriptNaming) NewScriptPrefix(version uint) string {
 	return fmt.Sprintf("%s_%s", must.Nice(T.newVersion(version)), must.Nice(T.Description))
 }

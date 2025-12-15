@@ -41,7 +41,7 @@ Intelligent database migration toolkit with GORM struct integration and automate
 | `newmigrate`     | Create golang-migrate instance                             |
 | `migrationparam` | Migration connection management and debug mode settings    |
 | `newscripts`     | Generate next version migration scripts                    |
-| `cobramigration` | Cobra CLI commands (up/down/force)                         |
+| `cobramigration` | Cobra CLI commands (inc/dec/all)                           |
 | `previewmigrate` | Preview migrations before execution                        |
 | `migrationstate` | Check migration status                                     |
 
@@ -152,11 +152,13 @@ go run main.go migrate all    # All pending
 |---------|-------------|
 | `status` | Show database version, pending migrations, schema diff |
 | `new-script` | Generate migration scripts based on schema changes |
+| `new-script create` | Create new migration script with options |
+| `new-script update` | Update latest uncommitted migration script |
 | `preview inc` | Preview next migration without executing |
+| `migrate` | Show current migration version |
 | `migrate inc` | Execute next migration |
 | `migrate dec` | Rollback one migration |
 | `migrate all` | Execute all pending migrations |
-| `migrate force N` | Force set version to N |
 
 ## Database Support
 
@@ -185,7 +187,7 @@ Enable debug mode to see detailed SQL capture and migration analysis output:
 ```go
 import "github.com/go-xlan/go-migrate/migrationparam"
 
-// Enable debug mode for migration operations
+// Enable debug mode to see migration details
 migrationparam.SetDebugMode(true)
 
 // Check current debug mode status
@@ -211,19 +213,20 @@ migration := rese.V1(newmigrate.NewWithEmbedFsAndDatabase(&newmigrate.EmbedFsAnd
 ### Custom Script Naming
 
 ```go
+// Configure version pattern and description
 naming := &newscripts.ScriptNaming{
-    NewScriptPrefix: func(version uint) string {
-        return fmt.Sprintf("%d_%s", version, description)
-    },
+    VersionType: newscripts.VersionTime, // Use timestamp: 20250621103045
+    Description: "add_user_table",       // Script description
 }
+// Generates: 20250621103045_add_user_table.up.sql
 ```
 
 ### Migration Options
 
 ```go
-options := newscripts.NewOptions("./scripts").
-    WithDryRun(true).
-    WithSurveyWritten(true)
+options := newscripts.NewOptions("./scripts")
+options.DryRun = true        // Preview without writing files
+options.SurveyWritten = true // Prompt before writing
 ```
 
 ## Examples

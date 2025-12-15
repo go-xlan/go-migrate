@@ -1,7 +1,7 @@
-// Package newmigrate: Database migration instance factory with multiple initialization strategies
-// Provides flexible migration creation supporting file systems, embedded resources and database drivers
-// Features generic type parameters for automatic driver registration and configuration
-// Integrates with golang-migrate library for robust version control and execution
+// Package newmigrate: Database migration instance creation with multiple initialization strategies
+// Provides flexible migration setup supporting file systems, embedded resources and database drivers
+// Features generic type parameters and automatic registration and configuration
+// Integrates with golang-migrate to provide robust versioning and execution
 //
 // newmigrate: 数据库迁移实例工厂，支持多种初始化策略
 // 提供灵活的迁移创建，支持文件系统、嵌入资源和数据库驱动
@@ -22,12 +22,12 @@ import (
 )
 
 func init() {
-	must.Full(&file.File{}) // register file source(side effects)
+	must.Full(&file.File{}) // Register file source driver (side effects) // 注册文件源驱动（副作用）
 }
 
-// ScriptsAndDBSourceParam contains configuration for file-based migration with database connection string
-// Supports migration from local file system with database connection URL
-// Used for simple setup scenarios where database connection string is available
+// ScriptsAndDBSourceParam contains configuration using file-based migration with database connection string
+// Supports migration from file system with database connection URL
+// Used in simple setup scenarios when database connection string is available
 //
 // ScriptsAndDBSourceParam 包含基于文件的迁移配置和数据库连接字符串
 // 支持从本地文件系统进行迁移，使用数据库连接 URL
@@ -38,9 +38,9 @@ type ScriptsAndDBSourceParam struct {
 }
 
 // NewWithScriptsAndDBSource creates migration instance using file system scripts and database connection string
-// Generic type parameter T enforces database driver interface compliance and triggers driver registration
+// Generic type param T enforces database driver interface compliance and triggers registration
 // Supports multiple database types through golang-migrate driver system
-// Returns configured migration instance ready for execution
+// Returns configured migration instance prepared to execute
 //
 // Supported database drivers:
 //   - sqlite3.Sqlite from "github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -69,7 +69,7 @@ func NewWithScriptsAndDBSource[T database.Driver](param *ScriptsAndDBSourceParam
 }
 
 // ScriptsAndDatabaseParam contains configuration for file-based migration with database driver instance
-// Provides direct database driver control for advanced configuration scenarios
+// Provides direct database driver management in advanced configuration scenarios
 // Enables custom database setup and connection management
 //
 // ScriptsAndDatabaseParam 包含基于文件的迁移配置和数据库驱动实例
@@ -77,10 +77,17 @@ func NewWithScriptsAndDBSource[T database.Driver](param *ScriptsAndDBSourceParam
 // 支持自定义数据库设置和连接管理
 type ScriptsAndDatabaseParam struct {
 	ScriptsInRoot    string          // Path to migration scripts DIR // 迁移脚本 DIR 路径
-	DatabaseName     string          // Database name identifier // 数据库名称标识符
+	DatabaseName     string          // Database name ID // 数据库名称标识
 	DatabaseInstance database.Driver // Database driver instance // 数据库驱动实例
 }
 
+// NewWithScriptsAndDatabase creates migration instance using file system scripts and database driver instance
+// Provides direct database driver management with file-based migration scripts
+// Returns configured migration instance prepared to execute
+//
+// NewWithScriptsAndDatabase 使用文件系统脚本和数据库驱动实例创建迁移实例
+// 通过基于文件的迁移脚本提供直接的数据库驱动控制
+// 返回已配置的迁移实例，可运行
 func NewWithScriptsAndDatabase(param *ScriptsAndDatabaseParam) (*migrate.Migrate, error) {
 	sourceURL := "file://" + param.ScriptsInRoot
 	migration, err := migrate.NewWithDatabaseInstance(
@@ -95,7 +102,7 @@ func NewWithScriptsAndDatabase(param *ScriptsAndDatabaseParam) (*migrate.Migrate
 }
 
 // EmbedFsAndDatabaseParam contains configuration for embedded file system migration with database driver
-// Enables migration scripts to be embedded into binary for distribution
+// Enables migration scripts to be embedded into executable file
 // Supports self-contained applications with built-in migration capabilities
 //
 // EmbedFsAndDatabaseParam 包含嵌入文件系统迁移的配置和数据库驱动
@@ -104,16 +111,24 @@ func NewWithScriptsAndDatabase(param *ScriptsAndDatabaseParam) (*migrate.Migrate
 type EmbedFsAndDatabaseParam struct {
 	MigrationsFS     *embed.FS       // Embedded file system with migrations // 包含迁移的嵌入文件系统
 	EmbedDirName     string          // DIR name within embedded FS // 嵌入 FS 中的 DIR 名称
-	DatabaseName     string          // Database name identifier // 数据库名称标识符
+	DatabaseName     string          // Database name ID // 数据库名称标识
 	DatabaseInstance database.Driver // Database driver instance // 数据库驱动实例
 }
 
+// NewWithEmbedFsAndDatabase creates migration instance using embedded file system and database driver
+// Enables self-contained binaries with built-in migration scripts
+// Returns configured migration instance prepared to execute
+//
+// NewWithEmbedFsAndDatabase 使用嵌入文件系统和数据库驱动创建迁移实例
+// 支持带有内置迁移脚本的自包含二进制文件
+// 返回已配置的迁移实例，可运行
 func NewWithEmbedFsAndDatabase(param *EmbedFsAndDatabaseParam) (*migrate.Migrate, error) {
 	const sourceName = "iofs"
-	// cp from https://github.com/golang-migrate/migrate/blob/278833935c12dda022b1355f33a897d895501c45/source/iofs/example_test.go#L22
+	// Reference: https://github.com/golang-migrate/migrate/blob/278833935c12dda022b1355f33a897d895501c45/source/iofs/example_test.go#L22
+	// 详情参考: https://github.com/golang-migrate/migrate/blob/278833935c12dda022b1355f33a897d895501c45/source/iofs/example_test.go#L22
 	migration, err := migrate.NewWithInstance(
-		sourceName, // 固定的 iofs 类型
-		rese.V1(iofs.New(param.MigrationsFS, param.EmbedDirName)), // 初始化 iofs 驱动
+		sourceName, // Fixed iofs type // 固定的 iofs 类型
+		rese.V1(iofs.New(param.MigrationsFS, param.EmbedDirName)), // Initialize iofs driver // 初始化 iofs 驱动
 		param.DatabaseName,
 		param.DatabaseInstance,
 	)

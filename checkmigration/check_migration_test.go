@@ -1,3 +1,8 @@
+// Package checkmigration_test provides comprehensive tests that validate migration detection and SQL generation
+// Uses in-memory SQLite database to test schema comparison without external dependencies
+//
+// checkmigration_test 包提供验证迁移检测和 SQL 生成的综合测试
+// 使用内存 SQLite 数据库来测试结构比较，无需外部依赖
 package checkmigration_test
 
 import (
@@ -20,6 +25,9 @@ import (
 
 var caseDB *gorm.DB
 
+// TestMain initializes shared in-memory database instance and runs all tests
+//
+// TestMain 初始化共享的内存数据库实例并运行所有测试
 func TestMain(m *testing.M) {
 	dsn := fmt.Sprintf("file:db-%s?mode=memory&cache=shared", uuid.New().String())
 	db := done.VCE(gorm.Open(sqlite.Open(dsn), &gorm.Config{
@@ -33,13 +41,18 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+// TestCheckMigrate validates migration SQL detection with incremental schema changes
+// Tests sequential model upgrades from V1 to V2 with column and index additions
+//
+// TestCheckMigrate 验证带有增量结构变更的迁移 SQL 检测
+// 测试从 V1 到 V2 的顺序模型升级，包括列和索引的添加
 func TestCheckMigrate(t *testing.T) {
 	db := caseDB
 
 	require.True(t, t.Run("case-1", func(t *testing.T) {
 		migrateSQLs := checkmigration.CheckMigrate(db, []any{&UserV1{}})
 		require.Len(t, migrateSQLs, 1)
-		// 这里只需要确认是1个create table语句
+		// Confirm single CREATE TABLE statement // 确认是1个 CREATE TABLE 语句
 		tableName := extractTableNameFromCreateTable(migrateSQLs[0])
 		require.Equal(t, "users", tableName)
 
@@ -49,7 +62,7 @@ func TestCheckMigrate(t *testing.T) {
 	require.True(t, t.Run("case-2", func(t *testing.T) {
 		migrateSQLs := checkmigration.CheckMigrate(db, []any{&UserV2{}})
 		require.Len(t, migrateSQLs, 6)
-		//因为这里并不检查顺序所以使用 contains 断言
+		// Use contains assertion since sequence is not guaranteed // 因为不检查顺序所以使用 contains 断言
 		require.Contains(t, migrateSQLs, "ALTER TABLE `users` ADD `age` bigint")
 		require.Contains(t, migrateSQLs, "ALTER TABLE `users` ADD `from` varchar(255)")
 		require.Contains(t, migrateSQLs, "ALTER TABLE `users` ADD `student_no` varchar(255)")
@@ -84,6 +97,11 @@ func (u *UserV2) TableName() string {
 	return "users"
 }
 
+// TestCheckMigrate_Product validates migration detection with product models
+// Tests CREATE TABLE, ALTER TABLE, and CREATE INDEX operations
+//
+// TestCheckMigrate_Product 验证产品模型的迁移检测
+// 测试 CREATE TABLE、ALTER TABLE 和 CREATE INDEX 操作
 func TestCheckMigrate_Product(t *testing.T) {
 	db := caseDB
 
@@ -166,6 +184,9 @@ func TestCheckMigrate_Product(t *testing.T) {
 	}))
 }
 
+// showDebugScripts outputs forward and reverse scripts with colored formatting
+//
+// showDebugScripts 输出带颜色格式化的正向和反向脚本
 func showDebugScripts(t *testing.T, migrateOps checkmigration.MigrationOps) {
 	forwardScript := migrateOps.GetForwardScript()
 	zaplog.ZAPS.Skip(1).SUG.Debug("forward:", "\n", eroticgo.AQUA.Sprint(forwardScript))
@@ -173,6 +194,9 @@ func showDebugScripts(t *testing.T, migrateOps checkmigration.MigrationOps) {
 	zaplog.ZAPS.Skip(1).SUG.Debug("reverse:", "\n", eroticgo.PINK.Sprint(reverseScript))
 }
 
+// requireOperation asserts operation exists and returns it with debug output
+//
+// requireOperation 断言操作存在并返回它，同时输出调试信息
 func requireOperation(t *testing.T, migrateOps checkmigration.MigrationOps, forwardSQL string) *checkmigration.MigrationOp {
 	t.Log(forwardSQL)
 	op := migrateOps.SearchOp(forwardSQL)

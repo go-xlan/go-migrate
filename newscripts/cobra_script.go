@@ -38,6 +38,7 @@ func NewScriptCmd(config *Config) *cobra.Command {
 		Short:   "Create next migration script",
 		Long:    "Create next migration script",
 		Aliases: []string{"next-script"},
+		Args:    cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			migration, cleanup := config.Param.GetMigration()
 			defer cleanup()
@@ -83,12 +84,13 @@ func NewScriptCmd(config *Config) *cobra.Command {
 // 验证应该创建新脚本而不是更新现有脚本
 func createNewScriptCmd(config *Config) *cobra.Command {
 	var versionTypeInput string
-	var description string
+	var descriptionTitle string
 	var allowEmptyScript bool
 
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "create new migration script",
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			migration, cleanup := config.Param.GetMigration()
 			defer cleanup()
@@ -99,7 +101,7 @@ func createNewScriptCmd(config *Config) *cobra.Command {
 			// 创建 ScriptNaming（传入参数）
 			scriptNaming := &ScriptNaming{
 				VersionType: versionType,
-				Description: description,
+				Description: descriptionTitle,
 			}
 			zaplog.SUG.Infoln("script-naming:", neatjsons.S(scriptNaming))
 
@@ -129,9 +131,9 @@ func createNewScriptCmd(config *Config) *cobra.Command {
 	}
 
 	// 增加 flag 参数
-	cmd.Flags().StringVarP(&versionTypeInput, "version-type", "t", "NEXT", "version pattern: NEXT, UNIX, TIME")
-	cmd.Flags().StringVarP(&description, "description", "d", "script", "description for migration file name")
-	cmd.Flags().BoolVarP(&allowEmptyScript, "allow-empty-script", "e", false, "allow creating script when no schema changes")
+	cmd.Flags().StringVar(&versionTypeInput, "version-type", "NEXT", "version pattern: NEXT, UNIX, TIME")
+	cmd.Flags().StringVar(&descriptionTitle, "description", "script", "migration script description name")
+	cmd.Flags().BoolVar(&allowEmptyScript, "allow-empty-script", false, "allow creating script when no schema changes")
 
 	return cmd
 }
@@ -147,6 +149,7 @@ func updateTopScriptCmd(config *Config) *cobra.Command {
 	return &cobra.Command{
 		Use:   "update",
 		Short: "update top migration script",
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			migration, cleanup := config.Param.GetMigration()
 			defer cleanup()
